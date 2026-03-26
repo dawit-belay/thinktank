@@ -1,0 +1,27 @@
+services:
+  # The Database Service
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: synapse_db
+    ports:
+      - "5432:5432" # Maps [Host Port]:[Container Port]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Optional: A GUI to see your data (like a web-based pgAdmin)
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data: # This ensures your data survives if the container stops

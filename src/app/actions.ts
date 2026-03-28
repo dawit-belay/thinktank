@@ -9,18 +9,17 @@ import { revalidatePath } from "next/cache";
 
 export async function submitIdea(formData: FormData) {
   const content = formData.get("content") as string;
+  const meetingId = formData.get("meetingId") as string;
 
-  if (!content) return { error: "Content is required" };
+  if (!content || !meetingId) return;
 
-  try {
-    await db.insert(ideas).values({content: content,});
-    revalidatePath("/"); 
-    return { success: true };
-  } catch (error) {
-    console.error("Database Error:", error);
-    return { error: "Failed to save idea to Docker DB" };
-  }
+  await db.insert(ideas).values({
+    content: content,
+    meetingId: meetingId,
+  });
+  revalidatePath(`/meeting/${meetingId}`); 
 }
+ 
 
 
 

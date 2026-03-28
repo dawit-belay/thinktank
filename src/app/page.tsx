@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { meetings } from "@/db/schema";
 import Link from "next/link";
 
+import DeleteMeetingButton from "@/components/DeleteMeetingButton";
+
 export default async function Home() {
   const allmeetings = await db.select().from(meetings);
   return (
@@ -25,14 +27,19 @@ export default async function Home() {
        <h2 className="text-xl font-semibold mb-4">Your Active Rooms</h2>
          <ul className="space-y-3">
            {allmeetings.map((meeting) => (
-             <li key={meeting.id}>
-                <Link 
-                    href={`/meeting/${meeting.id}`}
-                    className="block p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors shadow-sm"
-                >
-                  <div className="font-medium">{meeting.title}</div>
-                  <div className="text-xs text-gray-400 font-mono">{meeting.id}</div>
-                </Link>
+             <li key={meeting.id} className="relative group">
+                <div className="flex items-center gap-2 border rounded-lg hover:border-blue-500 transition-colors shadow-sm">
+                  <Link 
+                      href={`/meeting/${meeting.id}`}
+                      className="block p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors shadow-sm"
+                  >
+                    <div className="font-medium">{meeting.title}</div>
+                    <div className="text-xs text-gray-400 font-mono">{meeting.id}</div>
+                  </Link>
+                  <div className="pr-4">
+                    <DeleteMeetingButton id={meeting.id} />
+                  </div>
+                </div>
               </li>
            ))}
          </ul>

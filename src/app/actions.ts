@@ -3,6 +3,7 @@
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
 import { ideas } from "@/db/schema";
 import { meetings } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 // import { redirect } from "next/navigation";
 
@@ -34,16 +35,11 @@ export async function createMeeting(formData: FormData) {
   revalidatePath("/"); 
 }
 
-// export async function createMeeting(formData: FormData) {
-//   const title = formData.get("title") as string;
+export async function deleteMeeting(id: string) {
+  // SQL: DELETE FROM meetings WHERE id = [id]
+  await db.delete(meetings).where(eq(meetings.id, id));
 
-//   try{
-//     const [newMeeting] = await db.insert(meetings)
-//         .values({title: title,}).returning();
-//     revalidatePath("/");
-//     // redirect(`/meeting/${newMeeting.id}`);
-//   } catch (error){
-//     console.error("Database Error:", error);
-//     throw error; // ✅ THIS FIXES IT
-//   }  
-// }
+  // Refresh the home page list
+  revalidatePath("/");
+}
+

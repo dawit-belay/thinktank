@@ -4,7 +4,7 @@ import { db } from "@/db"; // Adjust this path based on where your db/index.ts i
 import { ideas } from "@/db/schema";
 import { meetings } from "@/db/schema";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+// import { redirect } from "next/navigation";
 
 export async function submitIdea(formData: FormData) {
   const content = formData.get("content") as string;
@@ -22,16 +22,28 @@ export async function submitIdea(formData: FormData) {
 }
 
 
+
 export async function createMeeting(formData: FormData) {
   const title = formData.get("title") as string;
 
-  try{
-    const [newMeeting] = await db.insert(meetings)
-        .values({title: title,}).returning();
-    revalidatePath("/");
-    redirect(`/meeting/${newMeeting.id}`);
-  } catch (error){
-    console.error("Database Error:", error);
-    throw error; // ✅ THIS FIXES IT
-  }  
+ if (!title) return;
+
+  await db.insert(meetings).values({
+    title: title,
+  });
+  revalidatePath("/"); 
 }
+
+// export async function createMeeting(formData: FormData) {
+//   const title = formData.get("title") as string;
+
+//   try{
+//     const [newMeeting] = await db.insert(meetings)
+//         .values({title: title,}).returning();
+//     revalidatePath("/");
+//     // redirect(`/meeting/${newMeeting.id}`);
+//   } catch (error){
+//     console.error("Database Error:", error);
+//     throw error; // ✅ THIS FIXES IT
+//   }  
+// }

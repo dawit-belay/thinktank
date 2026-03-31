@@ -36,6 +36,40 @@ export async function signUp(formData: FormData) {
 }
 
 
+export async function login(formData: FormData) {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+
+  // 1. Find the user in Docker
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  // 2. Security Check: If user doesn't exist, don't say why (Prevents email fishing)
+  if (!user) {
+    throw new Error("Invalid credentials");
+  }
+
+  // 3. Compare the "Plain Text" password with the "Hashed" password
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    throw new Error("Invalid credentials");
+  }
+
+  // 4. Success! Set the cookie
+  const cookieStore = await cookies();
+  cookieStore.set("user_id", user.id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 7,
+    path: "/",
+  });
+
+  redirect("/");
+}
+
+
 export async function submitIdea(formData: FormData) {
   const content = formData.get("content") as string;
   const meetingId = formData.get("meetingId") as string;
@@ -50,6 +84,11 @@ export async function submitIdea(formData: FormData) {
 }
  
 
+export async function logout() {
+  const cookieStore = await cookies();
+  cookieStore.delete("user_id"); // Remove the VIP pass
+  redirect("/login");
+}
 
 
 export async function createMeeting(formData: FormData) {

@@ -87,7 +87,7 @@ export async function submitIdea(formData: FormData) {
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete("user_id"); // Remove the VIP pass
-  redirect("/login");
+  redirect("/");
 }
 
 

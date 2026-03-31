@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { meetings,ideas } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { meetings,ideas,users } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { submitIdea } from "@/app/actions";
 
@@ -20,8 +20,19 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
     notFound(); // Shows the 404 page if the ID doesn't exist
   }
 
-//  Get all ideas for THIS meeting only
-  const meetingIdeas = await db.select().from(ideas).where(eq(ideas.meetingId, meetingId));
+  // We select from 'ideas', then join 'users' where the IDs match
+  const meetingIdeas = await db
+    .select({
+      id: ideas.id,
+      content: ideas.content,
+      createdAt: ideas.createdAt,
+      authorName: users.name, // We "pluck" the name from the users table
+      authorEmail: users.email,
+    })
+    .from(ideas)
+    .innerJoin(users, eq(ideas.authorId, users.id)) // The "Stitch" point
+    .where(eq(ideas.meetingId, meetingId))
+    .orderBy(desc(ideas.createdAt));
 
   return (
    <main className="p-10 max-w-4xl mx-auto">
@@ -51,6 +62,16 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
         {meetingIdeas.map((idea) => (
           <div key={idea.id} className="p-4 border rounded-xl shadow-sm bg-yellow-50 border-yellow-200">
             <p className="text-gray-800">{idea.content}</p>
+
+            <div className="flex items-center gap-3 mt-4 pt-3 border-t border-gray-100">
+              <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs">
+                {idea.authorName.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold">{idea.authorName}</p>
+                <p className="text-[10px] text-gray-400 uppercase">Contributor</p>
+              </div>
+            </div>
           </div>
         ))}
       </div>

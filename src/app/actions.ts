@@ -74,11 +74,16 @@ export async function submitIdea(formData: FormData) {
   const content = formData.get("content") as string;
   const meetingId = formData.get("meetingId") as string;
 
-  if (!content || !meetingId) return;
+  // 1. Get the User ID
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  if (!content || !meetingId|| !userId) return;
 
   await db.insert(ideas).values({
     content: content,
     meetingId: meetingId,
+    authorId: userId,
   });
   revalidatePath(`/meeting/${meetingId}`); 
 }
@@ -96,8 +101,19 @@ export async function createMeeting(formData: FormData) {
 
  if (!title) return;
 
+ // 1. Get the User ID from the cookie
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  // 2. Security Check: If not logged in, they can't create rooms
+  if (!userId) {
+    throw new Error("You must be logged in to create a meeting.");
+  }
+
+  // 3. Save with the creatorId
   await db.insert(meetings).values({
     title: title,
+    creatorId: userId,
   });
   revalidatePath("/"); 
 }

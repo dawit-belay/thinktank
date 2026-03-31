@@ -14,16 +14,16 @@ export const meetings = pgTable("meetings", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
   // NEW: Link to the User who created the meeting
-  creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }),
+  creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // The Brainstorming Ideas table
 export const ideas = pgTable("ideas", {
   id: uuid("id").primaryKey().defaultRandom(),
-  meetingId: uuid("meeting_id").references(() => meetings.id, { onDelete: "cascade" }),
+  meetingId: uuid("meeting_id").references(() => meetings.id, { onDelete: "cascade" }).notNull(),
   // NEW: Link to the User who wrote the idea
-  authorId: uuid("author_id").references(() => users.id, { onDelete: "cascade" }),
+  authorId: uuid("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   content: text("content").notNull(),
   votes: integer("votes").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),

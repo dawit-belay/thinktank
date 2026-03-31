@@ -1,14 +1,43 @@
+import { cookies } from "next/headers";
 import { createMeeting } from "./actions";
 import { db } from "@/db";
-import { meetings } from "@/db/schema";
+import { meetings,users } from "@/db/schema";
 import Link from "next/link";
+import { eq } from "drizzle-orm";
 
 import DeleteMeetingButton from "@/components/DeleteMeetingButton";
 
 export default async function Home() {
+
+  // 1. Check for the cookie
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  // 2. Fetch the actual User object from Docker if the ID exists
+  let currentUser = null;
+  if (userId) {
+    currentUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+  }
+
   const allmeetings = await db.select().from(meetings);
   return (
     <main className="flex flex-col items-center min-h-screen p-24">
+
+      {currentUser ? (
+        <div>
+          <h1 className="text-2xl font-bold">Welcome back, {currentUser.name}!</h1>
+          <p className="text-sm text-blue-600">Role: {currentUser.role}</p>
+          {/* Show the Create Meeting form here */}
+        </div>
+      ) : (
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Please Sign In</h1>
+          <a href="/signup" className="text-blue-500 underline">Create an account to start brainstorming</a>
+        </div>
+      )}
+
       <h1 className="text-4xl font-bold mb-8 text-black">Thinktank Brainstroming Room</h1>
       <h1 className="mb-8 text-black">Start a new brainstorming session</h1>
       

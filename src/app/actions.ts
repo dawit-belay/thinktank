@@ -1,11 +1,40 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas } from "@/db/schema";
-import { meetings } from "@/db/schema";
+import { ideas, meetings, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-// import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+
+export async function signUp(formData: FormData) {
+  const name = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+
+  // 1. Hash the password (10 rounds of scrambling)
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // 2. Insert into Docker
+  const [newUser] = await db.insert(users).values({
+    name, email, password: hashedPassword,
+    role: "user", // Default role
+  }).returning();
+
+  // 3. Set a Cookie (This "Logs them in" instantly)
+  const cookieStore = await cookies();
+  cookieStore.set("user_id", newUser.id, {
+    httpOnly: true, // Security: JS can't steal this cookie
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+    path: "/",
+  });
+
+  redirect("/");
+}
+
 
 export async function submitIdea(formData: FormData) {
   const content = formData.get("content") as string;

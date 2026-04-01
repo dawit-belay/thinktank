@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, meetings, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { ideas, meetings, users, votes } from "@/db/schema";
+import { eq,and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
@@ -126,3 +126,25 @@ export async function deleteMeeting(id: string) {
   revalidatePath("/");
 }
 
+
+export async function toggleVote(ideaId: string, meetingId: string) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  if (!userId) throw new Error("You must be logged in to vote.");
+
+  // 1. Check if this specific user already voted for this specific idea
+  const existingVote = await db.query.votes.findFirst({
+    where: and(eq(votes.userId, userId), eq(votes.ideaId, ideaId)),
+  });
+
+  if (existingVote) {
+    // 2. Remove the vote
+    await db.delete(votes).where(eq(votes.id, existingVote.id));
+  } else {
+    // 3. Add the vote
+    await db.insert(votes).values({ userId, ideaId });
+  }
+
+  revalidatePath(`/meeting/${meetingId}`);
+}

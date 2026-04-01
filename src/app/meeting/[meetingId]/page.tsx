@@ -3,6 +3,9 @@ import { meetings,ideas,users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { submitIdea } from "@/app/actions";
+import { cookies } from "next/headers";
+import VoteButton from "@/components/VoteButton";
+
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string }>;
@@ -11,28 +14,26 @@ interface MeetingPageProps {
 export default async function MeetingPage({ params }: MeetingPageProps) {
   const { meetingId } = await params;
 
+  // Get the current user's ID to check if they've already voted
+  const cookieStore = await cookies();
+  const currentUserId = cookieStore.get("user_id")?.value;
+
   // Fetch the specific meeting from Docker
   const meeting = await db.query.meetings.findFirst({
     where: eq(meetings.id, meetingId),
   });
 
-  if (!meeting) {
-    notFound(); // Shows the 404 page if the ID doesn't exist
-  }
+  if (!meeting) notFound();
 
-  // We select from 'ideas', then join 'users' where the IDs match
-  const meetingIdeas = await db
-    .select({
-      id: ideas.id,
-      content: ideas.content,
-      createdAt: ideas.createdAt,
-      authorName: users.name, // We "pluck" the name from the users table
-      authorEmail: users.email,
-    })
-    .from(ideas)
-    .innerJoin(users, eq(ideas.authorId, users.id)) // The "Stitch" point
-    .where(eq(ideas.meetingId, meetingId))
-    .orderBy(desc(ideas.createdAt));
+  // Fetch ideas with Authors AND Votes using Relational Queries
+  const meetingIdeas = await db.query.ideas.findMany({
+    where: eq(ideas.meetingId, meetingId),
+    with: {
+      author: true,
+      votes: true, // This brings in the array of votes for each idea
+    },
+    orderBy: (ideas, { desc }) => [desc(ideas.createdAt)],
+  });
 
   return (
    <main className="p-10 max-w-4xl mx-auto">
@@ -59,21 +60,36 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
 
       {/* 4. The Ideas List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {meetingIdeas.map((idea) => (
+        {meetingIdeas.map((idea) =>{
+        // Check if the currently logged-in user is in the list of votes
+          const hasVoted = idea.votes.some(v => v.userId === currentUserId);
+
+         return(
           <div key={idea.id} className="p-4 border rounded-xl shadow-sm bg-yellow-50 border-yellow-200">
             <p className="text-gray-800">{idea.content}</p>
 
-            <div className="flex items-center gap-3 mt-4 pt-3 border-t border-gray-100">
-              <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs">
-                {idea.authorName.charAt(0).toUpperCase()}
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-700 font-bold text-xs border border-zinc-200">
+                    {idea.author.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-zinc-900">{idea.author.name}</p>
+                    <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-tighter">Contributor</p>
+                  </div>
+                </div>
+
+                {/* The new Voting Button */}
+                <VoteButton 
+                  ideaId={idea.id} 
+                  meetingId={meetingId} 
+                  count={idea.votes.length} 
+                  hasVoted={hasVoted} 
+                />
               </div>
-              <div>
-                <p className="text-sm font-semibold">{idea.authorName}</p>
-                <p className="text-[10px] text-gray-400 uppercase">Contributor</p>
-              </div>
-            </div>
           </div>
-        ))}
+          )
+        })}
       </div>
     </main>
   );

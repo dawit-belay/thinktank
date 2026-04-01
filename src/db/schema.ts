@@ -1,4 +1,5 @@
-import { pgTable, uuid, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -22,9 +23,26 @@ export const meetings = pgTable("meetings", {
 export const ideas = pgTable("ideas", {
   id: uuid("id").primaryKey().defaultRandom(),
   meetingId: uuid("meeting_id").references(() => meetings.id, { onDelete: "cascade" }).notNull(),
-  // NEW: Link to the User who wrote the idea
   authorId: uuid("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   content: text("content").notNull(),
-  votes: integer("votes").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// The NEW Votes Table (The "Junction" Table)
+export const votes = pgTable("votes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// 3. Define the Relations so Drizzle can "Join" them easily
+export const votesRelations = relations(votes, ({ one }) => ({
+  user: one(users, { fields: [votes.userId], references: [users.id] }),
+  idea: one(ideas, { fields: [votes.ideaId], references: [ideas.id] }),
+}));
+
+export const ideasRelations = relations(ideas, ({ one, many }) => ({
+  author: one(users, { fields: [ideas.authorId], references: [users.id] }),
+  votes: many(votes), // An idea can have many votes
+}));

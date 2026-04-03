@@ -6,6 +6,8 @@ import { submitIdea } from "@/app/actions";
 import { cookies } from "next/headers";
 import VoteButton from "@/components/VoteButton";
 
+import DeleteMeetingButton from "@/components/DeleteMeetingButton";
+
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string }>;
@@ -18,12 +20,16 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
   const cookieStore = await cookies();
   const currentUserId = cookieStore.get("user_id")?.value;
 
+  
+
   // Fetch the specific meeting from Docker
   const meeting = await db.query.meetings.findFirst({
     where: eq(meetings.id, meetingId),
   });
 
   if (!meeting) notFound();
+
+  const isOwner = meeting.creatorId === currentUserId;
 
   // Fetch ideas with Authors AND Votes using Relational Queries
   const meetingIdeas = await db.query.ideas.findMany({
@@ -37,11 +43,20 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
 
   return (
    <main className="p-10 max-w-4xl mx-auto">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold">{meeting.title}</h1>
-        <p className="text-gray-500 font-mono text-sm">Room ID: {meetingId}</p>
-      </div>
+      <div className="flex justify-between items-center mb-10">
+        <div className="mb-10">
+          <h1 className="text-3xl font-bold">{meeting.title}</h1>
+          <p className="text-gray-500 font-mono text-sm">Organized by {isOwner ? "You" : "a Colleague"}</p>
+        </div>
 
+        {/* Only show the Delete button if YOU are the owner */}
+        {isOwner && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 font-medium">Meeting Admin</span>
+            <DeleteMeetingButton id={meetingId} />
+          </div>
+        )}
+      </div>
       {/* 3. The Submit Idea Form */}
       <form action={submitIdea} className="mb-10 flex gap-2">
         {/* WE NEED A HIDDEN INPUT TO SEND THE MEETING ID */}

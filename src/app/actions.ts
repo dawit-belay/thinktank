@@ -119,11 +119,25 @@ export async function createMeeting(formData: FormData) {
 }
 
 export async function deleteMeeting(id: string) {
-  // SQL: DELETE FROM meetings WHERE id = [id]
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  // 1. Fetch the meeting to see who owns it
+  const meeting = await db.query.meetings.findFirst({
+    where: eq(meetings.id, id),
+  });
+
+  // 2. SECURITY CHECK: If I am not the owner, I cannot delete it
+  if (!meeting || meeting.creatorId !== userId) {
+    throw new Error("Unauthorized: You do not own this meeting.");
+  }
+
+  // 3. Delete from Docker
   await db.delete(meetings).where(eq(meetings.id, id));
 
-  // Refresh the home page list
+  // 4. Go back to the dashboard
   revalidatePath("/");
+  redirect("/");
 }
 
 

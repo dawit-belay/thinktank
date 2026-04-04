@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import VoteButton from "@/components/VoteButton";
 
 import DeleteMeetingButton from "@/components/DeleteMeetingButton";
+import DeleteIdeaButton from "@/components/DeleteIdeaButton";
 
 
 interface MeetingPageProps {
@@ -78,9 +79,17 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
         {meetingIdeas.map((idea) =>{
         // Check if the currently logged-in user is in the list of votes
           const hasVoted = idea.votes.some(v => v.userId === currentUserId);
+          const canDelete = idea.authorId === currentUserId || isOwner;
 
          return(
-          <div key={idea.id} className="p-4 border rounded-xl shadow-sm bg-yellow-50 border-yellow-200">
+          <div key={idea.id} className="group relative p-4 border rounded-xl shadow-sm bg-yellow-50 border-yellow-200">
+            {/* Delete Button - Top Right */}
+            
+            {canDelete && (
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <DeleteIdeaButton ideaId={idea.id} meetingId={meetingId} />
+              </div>
+            )}
             <p className="text-gray-800">{idea.content}</p>
 
             <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-100">

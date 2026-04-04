@@ -44,5 +44,6 @@ export const votesRelations = relations(votes, ({ one }) => ({
 
 export const ideasRelations = relations(ideas, ({ one, many }) => ({
   author: one(users, { fields: [ideas.authorId], references: [users.id] }),
+  meeting: one(meetings, {fields: [ideas.meetingId],references: [meetings.id],}),
   votes: many(votes), // An idea can have many votes
 }));

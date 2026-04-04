@@ -140,6 +140,32 @@ export async function deleteMeeting(id: string) {
   redirect("/");
 }
 
+export async function deleteIdea(ideaId: string, meetingId: string) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  // 1. Fetch the idea and the meeting to check permissions
+  const idea = await db.query.ideas.findFirst({
+    where: eq(ideas.id, ideaId),
+    with: { meeting: true }
+  });
+
+  if (!idea) throw new Error("Idea not found");
+
+  // 2. SECURITY CHECK: Are you the Author OR the Meeting Owner?
+  const isAuthor = idea.authorId === userId;
+  const isMeetingOwner = idea.meeting.creatorId === userId;
+
+  if (!isAuthor && !isMeetingOwner) {
+    throw new Error("Unauthorized to delete this idea");
+  }
+
+  // 3. Delete the idea (Votes will auto-delete due to 'cascade' in schema)
+  await db.delete(ideas).where(eq(ideas.id, ideaId));
+
+  revalidatePath(`/meeting/${meetingId}`);
+}
+
 
 export async function toggleVote(ideaId: string, meetingId: string) {
   const cookieStore = await cookies();

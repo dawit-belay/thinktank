@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
 import { createMeeting } from "./actions";
 import { db } from "@/db";
-import { meetings,users } from "@/db/schema";
+import { meetings,users,ideas } from "@/db/schema";
 import Link from "next/link";
-import { eq } from "drizzle-orm";
+import { eq,desc,count } from "drizzle-orm";
 
+import MeetingCard from "@/components/MeetingCard";
 import DeleteMeetingButton from "@/components/DeleteMeetingButton";
 
 export default async function Home() {
@@ -21,67 +22,111 @@ export default async function Home() {
     });
   }
 
-  const allmeetings = await db.select().from(meetings);
+  // 1. Get Meetings count
+const [myMeetingsCount] = await db
+  .select({ count: count() })
+  .from(meetings)
+  .where(eq(meetings.creatorId, userId!));
+
+// 2. Get your total Ideas contributed
+const [myIdeasCount] = await db
+  .select({ count: count() })
+  .from(ideas)
+  .where(eq(ideas.authorId, userId!));
+
+// 3. Get your "Karma" (Sum of votes on your ideas)
+const myIdeas = await db.query.ideas.findMany({
+  where: eq(ideas.authorId, userId!),
+  with: { votes: true }
+});
+const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
+
+  // Fetch all meetings, newest first
+  const allmeetings = await db.query.meetings.findMany({
+    orderBy: [desc(meetings.createdAt)],
+  });
+
   return (
-    <main className="flex flex-col items-center min-h-screen p-24">
+    <main className="min-h-screen bg-zinc-50 p-8 md:p-16 text-black">
+      <div className="max-w-6xl mx-auto">
+     
+        {/* --- 1. HEADER & WELCOME SECTION --- */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+          <div>
+            {currentUser ? (
+              <div>
+                <h1 className="text-4xl font-black tracking-tight">Welcome, {currentUser.name}</h1>
 
-      {currentUser ? (
-        <div>
-          <h1 className="text-2xl font-bold">Welcome back, {currentUser.name}!</h1>
-          <p className="text-sm text-blue-600">Role: {currentUser.role}</p>
-          {/* Show the Create Meeting form here */}
-        </div>
-      ) : (
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Please Sign In</h1>
-          <a href="/signup" className="text-blue-500 underline">Create an account to start brainstorming</a>
-        </div>
-      )}
-
-      <h1 className="text-4xl font-bold mb-8 text-black">Thinktank Brainstroming Room</h1>
-      <h1 className="mb-8 text-black">Start a new brainstorming session</h1>
-      
-      <form action={createMeeting} className="flex flex-col gap-4 w-full max-w-sm mb-12">
-        <input 
-          name="title" 
-          placeholder="Meeting Title (e.g. Q3 Planning)" 
-          className="p-3 rounded bg-zinc-200 border border-zinc-700 text-black"
-          required
-        />
-        <button type="submit" className="bg-blue-600 p-3 rounded font-bold hover:bg-blue-500 transition">
-          Create Meeting Room
-        </button>
-      </form>
-      <div className="w-full max-w-md border-t pt-8">
-       <h2 className="text-xl font-semibold mb-4">Your Active Rooms</h2>
-         <ul className="space-y-3">
-           {allmeetings.map((meeting) => {
-            const isOwner = meeting.creatorId === userId;
-
-            return (
-             <li key={meeting.id} className="relative group">
-                <div className="flex items-center gap-2 border rounded-lg hover:border-blue-500 transition-colors shadow-sm">
-                  <Link 
-                      href={`/meeting/${meeting.id}`}
-                      className="block p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors shadow-sm"
-                  >
-                    <div className="font-medium">{meeting.title}</div>
-                    <div className="text-xs text-gray-400 font-mono">{meeting.id}</div>
-                  </Link>
-                  <div className="pr-4">
-                    {isOwner && <DeleteMeetingButton id={meeting.id} />}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 mt-6">
+                  <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Rooms Created</p>
+                    <p className="text-3xl font-black text-blue-600">{myMeetingsCount.count}</p>
+                  </div>
+                  
+                  <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Ideas Shared</p>
+                    <p className="text-3xl font-black text-green-600">{myIdeasCount.count}</p>
                   </div>
 
+                  <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Total Karma</p>
+                    <p className="text-3xl font-black text-orange-500">+{totalKarma}</p>
+                  </div>
                 </div>
-              </li>
-           )
-           })}
-         </ul>
-         {allmeetings.length === 0 && (
-           <p className="text-gray-500 italic">No meetings found. Be the first to add one!</p>
-         )}
-       </div>
+                <p className="text-zinc-500 font-medium mt-1">Ready to solve some problems today?</p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <h1 className="text-2xl font-bold">Please Sign In</h1>
+                <a href="/signup" className="text-blue-500 underline">Create an account to start brainstorming</a>
+                {/* new update ----- to be used */}
+                {/* <h1 className="text-4xl font-black tracking-tight tracking-tight">Thinktank</h1>
+                <p className="text-zinc-500 font-medium">Please <a href="/signup" className="text-blue-600 underline">Sign In</a> to create rooms.</p> */}
+              </div>
+            )}
+          </div>
+          
+          {currentUser && (
+            <form action={createMeeting} className="flex flex-col gap-4 w-full max-w-sm mb-12">
+              <input 
+                name="title" 
+                placeholder="Meeting Title (e.g. Q3 Planning)" 
+                className="p-3 rounded bg-zinc-200 border border-zinc-700 text-black"
+                required
+              />
+              <button type="submit" className="bg-blue-600 p-3 rounded font-bold hover:bg-blue-500 transition">
+                Create Meeting Room
+              </button>
+            </form>
+          )}
+        </header>
+        
+        <hr className="border-zinc-200 mb-12" />
 
+        {/* --- 3. THE DASHBOARD GRID --- */}
+          <section>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
+              <h2 className="text-2xl font-bold text-zinc-800">Active Brainstorming Rooms</h2>
+            </div>
+
+            {allmeetings.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allmeetings.map((meeting) => (
+                  <MeetingCard 
+                    key={meeting.id} 
+                    meeting={meeting} 
+                    isOwner={meeting.creatorId === userId} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-white border-2 border-dashed border-zinc-200 rounded-3xl">
+                <p className="text-zinc-400 font-medium">No meetings found. Start one above!</p>
+              </div>
+            )}
+          </section>
+        </div>
     </main>
   );
 }

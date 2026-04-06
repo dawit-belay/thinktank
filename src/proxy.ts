@@ -7,8 +7,7 @@ export function proxy(request: NextRequest) {
   const userId = request.cookies.get('user_id')?.value;
 
   // 2. Define which paths are "Protected"
-  const isProtectedPath = request.nextUrl.pathname.startsWith('/meeting') || 
-                          request.nextUrl.pathname === '/';
+  const isProtectedPath = request.nextUrl.pathname.startsWith('/meeting');
 
   // 3. Define which paths are "Public" (Login/Signup)
   const isAuthPath = request.nextUrl.pathname.startsWith('/login') || 
@@ -16,7 +15,7 @@ export function proxy(request: NextRequest) {
 
   // LOGIC: If trying to access a protected room without a cookie -> Redirect to Login
   if (isProtectedPath && !userId) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // LOGIC: If already logged in and trying to go to Login/Signup -> Redirect to Home

@@ -8,11 +8,53 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+export type AuthActionState = {
+  ok: boolean;
+  formError?: string;
+  fieldErrors?: {
+    name?: string;
+    email?: string;
+    password?: string;
+  };
+};
 
-export async function signUp(formData: FormData) {
-  const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function signUp(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  const fieldErrors: NonNullable<AuthActionState["fieldErrors"]> = {};
+
+  if (!name) {
+    fieldErrors.name = "Name is required.";
+  }
+  if (!email) {
+    fieldErrors.email = "Email is required.";
+  } else if (!EMAIL_REGEX.test(email)) {
+    fieldErrors.email = "Please enter a valid email.";
+  }
+  if (!password) {
+    fieldErrors.password = "Password is required.";
+  } else if (password.length < 8) {
+    fieldErrors.password = "Password must be at least 8 characters.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { ok: false, fieldErrors };
+  }
+
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  if (existingUser) {
+    return { ok: false, fieldErrors: { email: "Email already exists." } };
+  }
 
   // 1. Hash the password (10 rounds of scrambling)
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -36,9 +78,27 @@ export async function signUp(formData: FormData) {
 }
 
 
-export async function login(formData: FormData) {
-  const email = formData.get("email") as string;
-  const password = formData.get("password") as string;
+export async function login(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const password = String(formData.get("password") ?? "");
+
+  const fieldErrors: NonNullable<AuthActionState["fieldErrors"]> = {};
+
+  if (!email) {
+    fieldErrors.email = "Email is required.";
+  } else if (!EMAIL_REGEX.test(email)) {
+    fieldErrors.email = "Please enter a valid email.";
+  }
+  if (!password) {
+    fieldErrors.password = "Password is required.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { ok: false, fieldErrors };
+  }
 
   // 1. Find the user in Docker
   const user = await db.query.users.findFirst({
@@ -47,14 +107,14 @@ export async function login(formData: FormData) {
 
   // 2. Security Check: If user doesn't exist, don't say why (Prevents email fishing)
   if (!user) {
-    throw new Error("Invalid credentials");
+    return { ok: false, formError: "Invalid credentials." };
   }
 
   // 3. Compare the "Plain Text" password with the "Hashed" password
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error("Invalid credentials");
+    return { ok: false, formError: "Invalid credentials." };
   }
 
   // 4. Success! Set the cookie

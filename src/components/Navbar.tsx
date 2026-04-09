@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { logout } from "@/app/actions";
+import ProfileDropdown from "./ProfileDropdown"
 
 export default async function Navbar() {
   // 1. Check if the user is logged in via cookies
@@ -27,19 +28,7 @@ export default async function Navbar() {
       </div>
 
       <div className="flex items-center gap-6">
-        {user ? (
-          <>
-            <span className="text-sm text-gray-500">
-              Welcome, <span className="font-semibold text-black">{user.name}</span>
-            </span>
-            {/* Logout needs to be a form to trigger the Server Action */}
-            <form action={logout}>
-              <button className="text-sm font-medium text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition">
-                Logout
-              </button>
-            </form>
-          </>
-        ) : (
+        {user ? <ProfileDropdown userName={user.name} />: (
           <>
             <Link href="/login" className="text-gray-600 hover:text-black transition">
               Login

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp,primaryKey } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -9,6 +9,26 @@ export const users = pgTable("users", {
   role: text("role").$type<"user" | "admin">().default("user").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// 1. The Group Table
+export const groups = pgTable("groups", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// The Members Table (The link between Users and Groups)
+export const groupMembers = pgTable("group_members", {
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  role: text("role").$type<"admin" | "member">().default("member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull()
+}, (t) => ({
+  // This ensures a user can't join the same group twice
+  pk: primaryKey({ columns: [t.userId, t.groupId] }),
+}));
 
 // The Meeting Room table
 export const meetings = pgTable("meetings", {
@@ -46,4 +66,21 @@ export const ideasRelations = relations(ideas, ({ one, many }) => ({
   author: one(users, { fields: [ideas.authorId], references: [users.id] }),
   meeting: one(meetings, {fields: [ideas.meetingId],references: [meetings.id],}),
   votes: many(votes), // An idea can have many votes
+}));
+
+
+export const groupsRelations = relations(groups, ({ many }) => ({
+  members: many(groupMembers),
+  meetings: many(meetings),
+}));
+
+export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupMembers.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [groupMembers.userId],
+    references: [users.id],
+  }),
 }));

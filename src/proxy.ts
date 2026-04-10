@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
   const userId = request.cookies.get('user_id')?.value;
 
   // 2. Define which paths are "Protected"
-  const isProtectedPath = request.nextUrl.pathname.startsWith('/meeting');
+  const isProtectedPath = request.nextUrl.pathname.startsWith('/group');
 
   // 3. Define which paths are "Public" (Login/Signup)
   const isAuthPath = request.nextUrl.pathname.startsWith('/login') || 

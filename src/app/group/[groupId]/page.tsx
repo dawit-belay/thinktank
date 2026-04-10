@@ -6,7 +6,6 @@ import Link from "next/link";
 import { eq,desc,count } from "drizzle-orm";
 
 import MeetingCard from "@/components/MeetingCard";
-import DeleteMeetingButton from "@/components/DeleteMeetingButton";
 
 interface GroupPageProps {
   params: Promise<{ groupId: string }>;
@@ -63,6 +62,12 @@ const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
             {currentUser ? (
               <div>
                 <h1 className="text-4xl font-black tracking-tight">Welcome, {currentUser.name}</h1>
+                <Link 
+                  href={`/group/${groupId}/create_new_meeting`}
+                  className="bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all"
+                >
+                  create new meeting
+                </Link>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 mt-6">
                   <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
@@ -92,21 +97,7 @@ const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
               </div>
             )}
           </div>
-          
-          {currentUser && (
-            <form action={createMeeting} className="flex flex-col gap-4 w-full max-w-sm mb-12">
-              <input type="hidden" name="groupId" value={groupId} />
-              <input 
-                name="title" 
-                placeholder="Meeting Title (e.g. Q3 Planning)" 
-                className="p-3 rounded bg-zinc-200 border border-zinc-700 text-black"
-                required
-              />
-              <button type="submit" className="bg-blue-600 p-3 rounded font-bold hover:bg-blue-500 transition">
-                Create Meeting Room
-              </button>
-            </form>
-          )}
+    
         </header>
         
         <hr className="border-zinc-200 mb-12" />

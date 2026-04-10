@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
-import { creategroup } from "../actions";
 import { db } from "@/db";
 import { groups,users } from "@/db/schema";
 import { eq,desc } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import Link from "next/link";
 
 import GroupCard from "@/components/groupCard";
 
@@ -12,11 +13,18 @@ export default async function group() {
     const userId = cookieStore.get("user_id")?.value;
 
     // 2. Fetch the actual User object from Docker if the ID exists
-  let currentUser = null;
-  if (userId) {
-    currentUser = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+
+  if (!userId) {
+    redirect("/login");
+  }
+
+  // 2. Fetch the actual User object from Docker if the ID exists
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
+
+  if (!currentUser) {
+    redirect("/login");
   }
 
   // Fetch all meetings, newest first
@@ -27,24 +35,12 @@ export default async function group() {
     <div className="min-h-screen bg-zinc-50 p-8 md:p-16 text-black">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
         <h1 className="text-4xl font-black tracking-tight">Welcome, {currentUser.name}</h1>
-
-        <form action={creategroup} className="flex flex-col gap-4 w-full max-w-sm mb-12 mt-4">
-            <input 
-            name="name" 
-            placeholder="group name" 
-            className="p-3 rounded bg-zinc-200 border border-zinc-700 text-black"
-            required
-            />
-            <input 
-            name="description" 
-            placeholder="description" 
-            className="p-3 rounded bg-zinc-200 border border-zinc-700 text-black"
-            required
-            />
-            <button type="submit" className="bg-blue-600 p-3 rounded font-bold hover:bg-blue-500 transition">
-            Create group
-            </button>
-        </form>
+        <Link 
+          href={`/group/create_new_group`}
+          className="bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all"
+        >
+          create new group
+        </Link>
       </div>
         
 

@@ -14,7 +14,7 @@ export default function GroupCard({
       <div>
         <div className="flex justify-between items-start">
           <h3 className="text-xl font-bold text-zinc-900 group-hover:text-blue-600 transition-colors">
-            {group.title}
+            {group.name}
           </h3>
           {/* {isOwner && <DeleteMeetingButton id={meeting.id} />} */}
         </div>

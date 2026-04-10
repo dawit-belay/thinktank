@@ -61,10 +61,10 @@ export default async function Home() {
                   .
                 </p>
                 <Link
-                  href="/meeting"
+                  href="/group"
                   className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500"
                 >
-                  Open meeting rooms
+                  Open group rooms
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
               </div>
@@ -185,10 +185,10 @@ export default async function Home() {
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
             {currentUser ? (
               <Link
-                href="/meeting"
+                href="/group"
                 className="font-semibold text-blue-600 underline-offset-4 hover:underline"
               >
-                Meeting rooms
+                group rooms
               </Link>
             ) : (
               <>

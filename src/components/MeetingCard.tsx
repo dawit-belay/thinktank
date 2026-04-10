@@ -20,7 +20,7 @@ export default function MeetingCard({
           <h3 className="text-xl font-bold text-zinc-900 group-hover:text-blue-600 transition-colors">
             {meeting.title}
           </h3>
-          {isOwner && <DeleteMeetingButton id={meeting.id} />}
+          {isOwner && <DeleteMeetingButton id={meeting.id} groupId={groupId} />}
         </div>
         <p className="text-xs text-zinc-400 font-mono mt-1 uppercase tracking-tighter">
           ID: {meeting.id.slice(0, 8)}...

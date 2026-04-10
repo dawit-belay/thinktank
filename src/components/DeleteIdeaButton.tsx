@@ -2,12 +2,12 @@
 import { X } from "lucide-react"; // A small 'X' looks better for ideas
 import { deleteIdea } from "@/app/actions";
 
-export default function DeleteIdeaButton({ ideaId, meetingId }: { ideaId: string, meetingId: string }) {
+export default function DeleteIdeaButton({ ideaId, meetingId, groupId }: { ideaId: string, meetingId: string, groupId: string }) {
   return (
     <button
       onClick={async () => {
         if (confirm("Delete this idea?")) {
-          await deleteIdea(ideaId, meetingId);
+          await deleteIdea(ideaId, meetingId, groupId);
         }
       }}
       className="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded-md transition"

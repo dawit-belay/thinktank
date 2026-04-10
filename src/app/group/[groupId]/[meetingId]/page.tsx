@@ -11,11 +11,12 @@ import DeleteIdeaButton from "@/components/DeleteIdeaButton";
 
 
 interface MeetingPageProps {
-  params: Promise<{ meetingId: string }>;
+  params: Promise<{ meetingId: string, groupId: string}>;
 }
 
 export default async function MeetingPage({ params }: MeetingPageProps) {
   const { meetingId } = await params;
+  const { groupId } = await params;
 
   // Get the current user's ID to check if they've already voted
   const cookieStore = await cookies();
@@ -54,7 +55,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
         {isOwner && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-400 font-medium">Meeting Admin</span>
-            <DeleteMeetingButton id={meetingId} />
+            <DeleteMeetingButton id={meetingId} groupId={groupId} />
           </div>
         )}
       </div>
@@ -87,7 +88,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
             
             {canDelete && (
               <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <DeleteIdeaButton ideaId={idea.id} meetingId={meetingId} />
+                <DeleteIdeaButton ideaId={idea.id} meetingId={meetingId} groupId={groupId} />
               </div>
             )}
             <p className="text-gray-800">{idea.content}</p>
@@ -108,7 +109,8 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                   ideaId={idea.id} 
                   meetingId={meetingId} 
                   count={idea.votes.length} 
-                  hasVoted={hasVoted} 
+                  hasVoted={hasVoted}
+                  groupId={groupId}
                 />
               </div>
           </div>

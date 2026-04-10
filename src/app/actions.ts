@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, groups, meetings, users, votes } from "@/db/schema";
+import { ideas, groups, meetings, users, votes, groupMembers } from "@/db/schema";
 import { eq,and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -23,7 +23,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export async function signUp(
   _prevState: AuthActionState,
   formData: FormData
-): Promise<AuthActionState> {
+  ): Promise<AuthActionState> {
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
@@ -133,6 +133,7 @@ export async function login(
 export async function submitIdea(formData: FormData) {
   const content = formData.get("content") as string;
   const meetingId = formData.get("meetingId") as string;
+  const groupId = formData.get("groupId") as string;
 
   // 1. Get the User ID
   const cookieStore = await cookies();
@@ -145,7 +146,7 @@ export async function submitIdea(formData: FormData) {
     meetingId: meetingId,
     authorId: userId,
   });
-  revalidatePath(`/meeting/${meetingId}`); 
+  revalidatePath(`/group/${groupId}/${meetingId}`); 
 }
  
 
@@ -180,8 +181,9 @@ export async function createMeeting(formData: FormData) {
     creatorId: userId,
     groupId,
   });
-  revalidatePath("/"); 
+  revalidatePath(`/group/${groupId}`); 
 }
+
 export async function creategroup(formData: FormData) {
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
@@ -203,10 +205,11 @@ export async function creategroup(formData: FormData) {
     description,
     creatorId: userId,
   });
-  revalidatePath("/"); 
+
+  revalidatePath("/group"); 
 }
 
-export async function deleteMeeting(id: string) {
+export async function deleteMeeting(id: string, groupId: string) {
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
 
@@ -224,11 +227,11 @@ export async function deleteMeeting(id: string) {
   await db.delete(meetings).where(eq(meetings.id, id));
 
   // 4. Go back to the dashboard
-  revalidatePath("/");
+  revalidatePath(`/group/${groupId}`);
   redirect("/");
 }
 
-export async function deleteIdea(ideaId: string, meetingId: string) {
+export async function deleteIdea(ideaId: string, meetingId: string, groupId: string) {
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
 
@@ -251,11 +254,11 @@ export async function deleteIdea(ideaId: string, meetingId: string) {
   // 3. Delete the idea (Votes will auto-delete due to 'cascade' in schema)
   await db.delete(ideas).where(eq(ideas.id, ideaId));
 
-  revalidatePath(`/meeting/${meetingId}`);
+  revalidatePath(`/group/${groupId}/${meetingId}`);
 }
 
 
-export async function toggleVote(ideaId: string, meetingId: string) {
+export async function toggleVote(ideaId: string, meetingId: string, groupId: string) {
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
 
@@ -274,5 +277,5 @@ export async function toggleVote(ideaId: string, meetingId: string) {
     await db.insert(votes).values({ userId, ideaId });
   }
 
-  revalidatePath(`/meeting/${meetingId}`);
+  `/group/${groupId}/${meetingId}`
 }

@@ -5,15 +5,16 @@ import { deleteMeeting } from "@/app/actions";
 
 interface Props {
   id: string;
+  groupId: string;
 }
 
-export default function DeleteMeetingButton({ id }: Props) {
+export default function DeleteMeetingButton({ id,groupId }: Props) {
   return (
     <button
       onClick={async (e) => {
         e.preventDefault(); // Stop the <Link> from triggering
         if (confirm("Are you sure you want to delete this room?")) {
-          await deleteMeeting(id);
+          await deleteMeeting(id,groupId);
         }
       }}
       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"

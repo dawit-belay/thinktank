@@ -4,17 +4,19 @@ import { toggleVote } from "@/app/actions";
 export default function VoteButton({ 
   ideaId, 
   meetingId, 
+  groupId, 
   count, 
   hasVoted 
 }: { 
   ideaId: string, 
   meetingId: string, 
+  groupId: string, 
   count: number, 
   hasVoted: boolean 
 }) {
   return (
     <button 
-      onClick={() => toggleVote(ideaId, meetingId)}
+      onClick={() => toggleVote(ideaId, meetingId, groupId)}
       className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all ${
         hasVoted 
           ? "bg-blue-600 text-white border-blue-600" 

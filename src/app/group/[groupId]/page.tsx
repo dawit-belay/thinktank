@@ -122,7 +122,9 @@ const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {allmeetings.map((meeting) => (
                   <MeetingCard 
-                    key={meeting.id} 
+                    key={meeting.id}
+                    groupId={groupId} 
+                    meetingid={meeting.id} 
                     meeting={meeting} 
                     isOwner={meeting.creatorId === userId} 
                   />

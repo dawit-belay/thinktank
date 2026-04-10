@@ -3,10 +3,14 @@ import DeleteMeetingButton from "./DeleteMeetingButton";
 import { Users, Calendar } from "lucide-react";
 
 export default function MeetingCard({ 
-  meeting, 
+  meeting,
+  meetingid,
+  groupId, 
   isOwner 
 }: { 
-  meeting: any, 
+  groupId: any, 
+  meeting: any,
+  meetingid:any, 
   isOwner: boolean 
 }) {
   return (
@@ -32,7 +36,7 @@ export default function MeetingCard({
         </div>
         
         <Link 
-          href={`/meeting/${meeting.id}`}
+          href={`/group/${groupId}/${meetingid}`}
           className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all"
         >
           Join Room

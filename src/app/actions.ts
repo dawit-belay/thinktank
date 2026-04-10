@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, meetings, users, votes } from "@/db/schema";
+import { ideas, groups, meetings, users, votes } from "@/db/schema";
 import { eq,and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -158,7 +158,11 @@ export async function logout() {
 
 export async function createMeeting(formData: FormData) {
   const title = formData.get("title") as string;
+  const groupId = formData.get("groupId") as string;
 
+  if (!groupId) {
+    throw new Error("groupId is missing");
+  }
  if (!title) return;
 
  // 1. Get the User ID from the cookie
@@ -173,6 +177,30 @@ export async function createMeeting(formData: FormData) {
   // 3. Save with the creatorId
   await db.insert(meetings).values({
     title: title,
+    creatorId: userId,
+    groupId,
+  });
+  revalidatePath("/"); 
+}
+export async function creategroup(formData: FormData) {
+  const name = formData.get("name") as string;
+  const description = formData.get("description") as string;
+
+ if (!name) return;
+
+ // 1. Get the User ID from the cookie
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  // 2. Security Check: If not logged in, they can't create rooms
+  if (!userId) {
+    throw new Error("You must be logged in to create a group.");
+  }
+
+  // 3. Save with the creatorId
+  await db.insert(groups).values({
+    name,
+    description,
     creatorId: userId,
   });
   revalidatePath("/"); 

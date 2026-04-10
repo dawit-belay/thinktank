@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createMeeting } from "../actions";
+import { createMeeting } from "../../actions";
 import { db } from "@/db";
 import { meetings,users,ideas } from "@/db/schema";
 import Link from "next/link";
@@ -8,8 +8,14 @@ import { eq,desc,count } from "drizzle-orm";
 import MeetingCard from "@/components/MeetingCard";
 import DeleteMeetingButton from "@/components/DeleteMeetingButton";
 
-export default async function Home() {
+interface GroupPageProps {
+  params: Promise<{ groupId: string }>;
+}
 
+export default async function GroupPage({ params }: GroupPageProps) {
+
+  const { groupId } = await params;
+  console.log("groupId:", groupId);
   // 1. Check for the cookie
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
@@ -43,6 +49,7 @@ const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
 
   // Fetch all meetings, newest first
   const allmeetings = await db.query.meetings.findMany({
+    where: eq(meetings.groupId, groupId),
     orderBy: [desc(meetings.createdAt)],
   });
 
@@ -88,6 +95,7 @@ const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
           
           {currentUser && (
             <form action={createMeeting} className="flex flex-col gap-4 w-full max-w-sm mb-12">
+              <input type="hidden" name="groupId" value={groupId} />
               <input 
                 name="title" 
                 placeholder="Meeting Title (e.g. Q3 Planning)" 

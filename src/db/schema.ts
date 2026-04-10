@@ -85,3 +85,16 @@ export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+
+// export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+//   group: one(groups, {
+//     fields: [meetings.groupId],
+//     references: [groups.id],
+//   }),
+//   creator: one(users, {
+//     fields: [meetings.creatorId],
+//     references: [users.id],
+//   }),
+//   ideas: many(ideas),
+// }));

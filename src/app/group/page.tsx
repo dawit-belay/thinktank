@@ -29,6 +29,7 @@ export default async function group() {
 
   // Fetch all meetings, newest first
   const allgroups = await db.query.groups.findMany({
+    where:eq(groups.creatorId,userId),
     orderBy: [desc(groups.createdAt)],
   });
   return (

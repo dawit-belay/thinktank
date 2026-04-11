@@ -19,32 +19,36 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
 
-  // 2. Fetch the actual User object from Docker if the ID exists
-  let currentUser = null;
-  if (userId) {
-    currentUser = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-    });
+  if (!userId) {
+    throw new Error("Unauthorized"); // should never happen
   }
 
-  // 1. Get Meetings count
-const [myMeetingsCount] = await db
-  .select({ count: count() })
-  .from(meetings)
-  .where(eq(meetings.creatorId, userId!));
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.id, userId!),
+  });
 
-// 2. Get your total Ideas contributed
-const [myIdeasCount] = await db
-  .select({ count: count() })
-  .from(ideas)
-  .where(eq(ideas.authorId, userId!));
+  if (!currentUser) {
+    throw new Error("User not found");
+  }
 
-// 3. Get your "Karma" (Sum of votes on your ideas)
-const myIdeas = await db.query.ideas.findMany({
-  where: eq(ideas.authorId, userId!),
-  with: { votes: true }
-});
-const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
+    // 1. Get Meetings count
+  const [myMeetingsCount] = await db
+    .select({ count: count() })
+    .from(meetings)
+    .where(eq(meetings.creatorId, userId!));
+
+  // 2. Get your total Ideas contributed
+  const [myIdeasCount] = await db
+    .select({ count: count() })
+    .from(ideas)
+    .where(eq(ideas.authorId, userId!));
+
+  // 3. Get your "Karma" (Sum of votes on your ideas)
+  const myIdeas = await db.query.ideas.findMany({
+    where: eq(ideas.authorId, userId!),
+    with: { votes: true }
+  });
+  const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
 
   // Fetch all meetings, newest first
   const allmeetings = await db.query.meetings.findMany({
@@ -55,59 +59,47 @@ const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
   return (
     <main className="min-h-screen bg-zinc-50 p-8 md:p-16 text-black">
       <div className="max-w-6xl mx-auto">
-     
         {/* --- 1. HEADER & WELCOME SECTION --- */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
-          <div>
-            {currentUser ? (
-              <div>
-                <h1 className="text-4xl font-black tracking-tight">Welcome, {currentUser.name}</h1>
-                <Link 
-                  href={`/group/${groupId}/create_new_meeting`}
-                  className="bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all"
-                >
-                  create new meeting
-                </Link>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 mt-6">
-                  <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
-                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Rooms Created</p>
-                    <p className="text-3xl font-black text-blue-600">{myMeetingsCount.count}</p>
-                  </div>
-                  
-                  <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
-                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Ideas Shared</p>
-                    <p className="text-3xl font-black text-green-600">{myIdeasCount.count}</p>
-                  </div>
-
-                  <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
-                    <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Total Karma</p>
-                    <p className="text-3xl font-black text-orange-500">+{totalKarma}</p>
-                  </div>
-                </div>
-                <p className="text-zinc-500 font-medium mt-1">Ready to solve some problems today?</p>
+        <div className="flex flex-col mb-12 gap-2">
+            <div className="flex flex-col gap-1 md:flex-row justify-between max-w-3xl">
+              <h1 className="text-4xl font-black tracking-tight">Welcome, {currentUser.name}</h1>
+              <Link 
+                href={`/group/${groupId}/create_new_meeting`}
+                className="bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all w-[165px]"
+              >
+                create new meeting
+              </Link>
+              <Link 
+                href={`#`}
+                className="bg-blue-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all w-[150px]"
+              >
+                add members
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12 mt-6">
+              <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Rooms Created</p>
+                <p className="text-3xl font-black text-blue-600">{myMeetingsCount.count}</p>
               </div>
-            ) : (
-              <div className="text-center">
-                <h1 className="text-2xl font-bold">Please Sign In</h1>
-                <a href="/signup" className="text-blue-500 underline">Create an account to start brainstorming</a>
-                {/* new update ----- to be used */}
-                {/* <h1 className="text-4xl font-black tracking-tight tracking-tight">Thinktank</h1>
-                <p className="text-zinc-500 font-medium">Please <a href="/signup" className="text-blue-600 underline">Sign In</a> to create rooms.</p> */}
+              
+              <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Ideas Shared</p>
+                <p className="text-3xl font-black text-green-600">{myIdeasCount.count}</p>
               </div>
-            )}
-          </div>
-    
-        </header>
+
+              <div className="p-6 bg-white border border-zinc-200 rounded-2xl shadow-sm">
+                <p className="text-zinc-500 text-sm font-bold uppercase tracking-wider">Total Karma</p>
+                <p className="text-3xl font-black text-orange-500">+{totalKarma}</p>
+              </div>
+            </div>
+            <p className="text-zinc-500 font-medium mt-1">Ready to solve some problems today?</p>
+        </div>
         
         <hr className="border-zinc-200 mb-12" />
 
           {/* --- 3. THE DASHBOARD GRID --- */}
           <section>
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-2 h-8 bg-blue-600 rounded-full"></div>
-              <h2 className="text-2xl font-bold text-zinc-800">Active Brainstorming Rooms</h2>
-            </div>
+              <h2 className="text-2xl font-bold text-zinc-800 mb-8">Active Brainstorming Rooms</h2>
 
             {allmeetings.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

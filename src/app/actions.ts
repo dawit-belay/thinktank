@@ -186,7 +186,7 @@ export async function createMeeting(formData: FormData) {
 
 export async function creategroup(formData: FormData) {
   const name = formData.get("name") as string;
-  const description = formData.get("description") as string;
+  const description = formData.get("description") as string || "";
 
  if (!name) return;
 
@@ -199,11 +199,18 @@ export async function creategroup(formData: FormData) {
     throw new Error("You must be logged in to create a group.");
   }
 
-  // 3. Save with the creatorId
-  await db.insert(groups).values({
+  // 3. Insert group and RETURN it
+  const [newGroup] = await db.insert(groups).values({
     name,
     description,
     creatorId: userId,
+  }).returning();
+
+  // 4. Save the creatorId into groupmembers
+  await db.insert(groupMembers).values({
+    groupId: newGroup.id,
+    userId: userId,
+    role: "admin"
   });
 
   revalidatePath("/group"); 

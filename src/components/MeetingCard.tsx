@@ -1,45 +1,58 @@
 import Link from "next/link";
 import DeleteMeetingButton from "./DeleteMeetingButton";
-import { Users, Calendar } from "lucide-react";
+import { Calendar, ArrowUpRight } from "lucide-react";
 
-export default function MeetingCard({ 
+export default function MeetingCard({
   meeting,
   meetingid,
-  groupId, 
-  isOwner 
-}: { 
-  groupId: any, 
-  meeting: any,
-  meetingid:any, 
-  isOwner: boolean 
+  groupId,
+  isOwner,
+}: {
+  groupId: string;
+  meeting: { id: string; title: string; createdAt: Date | string };
+  meetingid: string;
+  isOwner: boolean;
 }) {
   return (
-    <div className="group relative p-6 bg-white border border-zinc-200 rounded-2xl hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 flex flex-col justify-between h-48">
-      <div>
-        <div className="flex justify-between items-start">
-          <h3 className="text-xl font-bold text-zinc-900 group-hover:text-blue-600 transition-colors">
+    <div className="group/card relative flex h-[13.5rem] flex-col justify-between overflow-hidden rounded-2xl border border-zinc-200/90 bg-white/95 p-6 shadow-md shadow-zinc-200/50 backdrop-blur-sm transition-all duration-300 hover:border-emerald-300/80 hover:shadow-lg hover:shadow-emerald-500/10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald-200/40 blur-2xl transition-opacity group-hover/card:opacity-100"
+      />
+      <div className="relative">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="line-clamp-2 text-lg font-semibold tracking-tight text-zinc-900 transition-colors group-hover/card:text-emerald-700">
             {meeting.title}
           </h3>
-          {isOwner && <DeleteMeetingButton id={meeting.id} groupId={groupId} />}
+          {isOwner && (
+            <DeleteMeetingButton
+              id={meeting.id}
+              groupId={groupId}
+              variant="light"
+            />
+          )}
         </div>
-        <p className="text-xs text-zinc-400 font-mono mt-1 uppercase tracking-tighter">
-          ID: {meeting.id.slice(0, 8)}...
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-zinc-400">
+          {meeting.id.slice(0, 8)}…
         </p>
       </div>
 
-      <div className="flex items-center justify-between mt-auto">
-        <div className="flex gap-4 text-zinc-400 text-xs font-medium">
-           <span className="flex items-center gap-1">
-             <Calendar size={14} /> 
-             {new Date(meeting.createdAt).toLocaleDateString()}
-           </span>
-        </div>
-        
-        <Link 
+      <div className="relative mt-auto flex items-end justify-between gap-3 border-t border-zinc-100 pt-4">
+        <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
+          <Calendar className="shrink-0 opacity-70" size={14} strokeWidth={2} />
+          {new Date(meeting.createdAt).toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </span>
+
+        <Link
           href={`/group/${groupId}/${meetingid}`}
-          className="bg-zinc-900 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-600 transition-all"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/20 transition hover:bg-emerald-600"
         >
-          Join Room
+          Enter
+          <ArrowUpRight size={14} strokeWidth={2.5} />
         </Link>
       </div>
     </div>

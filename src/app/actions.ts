@@ -2,7 +2,7 @@
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
 import { ideas, groups, meetings, users, votes, groupMembers } from "@/db/schema";
-import { eq,and } from "drizzle-orm";
+import { eq, and, or, ilike, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
@@ -285,4 +285,117 @@ export async function toggleVote(ideaId: string, meetingId: string, groupId: str
   }
 
   `/group/${groupId}/${meetingId}`
+}
+
+export type SearchableUser = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+async function assertCanManageGroup(
+  groupId: string,
+  userId: string
+): Promise<boolean> {
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.id, groupId),
+  });
+  if (!group) return false;
+  if (group.creatorId === userId) return true;
+  const membership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, userId)
+    ),
+  });
+  return membership?.role === "admin";
+}
+
+export async function searchUsersForGroup(
+  groupId: string,
+  query: string
+): Promise<
+  { ok: true; users: SearchableUser[] } | { ok: false; error: string }
+> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) {
+    return { ok: false, error: "You must be signed in." };
+  }
+  if (!(await assertCanManageGroup(groupId, userId))) {
+    return { ok: false, error: "You do not have permission to add members." };
+  }
+
+  const trimmed = query.trim();
+  if (trimmed.length < 2) {
+    return { ok: true, users: [] };
+  }
+
+  const memberRows = await db
+    .select({ userId: groupMembers.userId })
+    .from(groupMembers)
+    .where(eq(groupMembers.groupId, groupId));
+
+  const memberIds = memberRows.map((r) => r.userId);
+
+  const searchPattern = `%${trimmed}%`;
+
+  const whereParts = [
+    or(ilike(users.name, searchPattern), ilike(users.email, searchPattern)),
+  ];
+  if (memberIds.length > 0) {
+    whereParts.push(notInArray(users.id, memberIds));
+  }
+
+  const results = await db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(and(...whereParts))
+    .limit(20);
+
+  return { ok: true, users: results };
+}
+
+export async function inviteUserToGroup(
+  groupId: string,
+  targetUserId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) {
+    return { ok: false, error: "You must be signed in." };
+  }
+  if (!(await assertCanManageGroup(groupId, userId))) {
+    return { ok: false, error: "You do not have permission to add members." };
+  }
+
+  const existing = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, targetUserId)
+    ),
+  });
+  if (existing) {
+    return { ok: false, error: "User is already a member." };
+  }
+
+  const target = await db.query.users.findFirst({
+    where: eq(users.id, targetUserId),
+  });
+  if (!target) {
+    return { ok: false, error: "User not found." };
+  }
+
+  try {
+    await db.insert(groupMembers).values({
+      groupId,
+      userId: targetUserId,
+      role: "member",
+    });
+  } catch {
+    return { ok: false, error: "Could not add member." };
+  }
+
+  revalidatePath(`/group/${groupId}`);
+  return { ok: true };
 }

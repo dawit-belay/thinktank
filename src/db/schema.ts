@@ -40,6 +40,17 @@ export const meetings = pgTable("meetings", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// The Members Table (The link between Users and meetings)
+export const meetingMembers = pgTable("meeting_members", {
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  meetingId: uuid("meeting_id").references(() => meetings.id, { onDelete: "cascade" }).notNull(),
+  role: text("role").$type<"admin" | "member">().default("member"),
+  joinedAt: timestamp("joined_at").defaultNow().notNull()
+}, (t) => ({
+  // This ensures a user can't join the same meeting twice
+  pk: primaryKey({ columns: [t.userId, t.meetingId] }),
+}));
+
 // The Brainstorming Ideas table
 export const ideas = pgTable("ideas", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -87,14 +98,27 @@ export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
 }));
 
 
-// export const meetingsRelations = relations(meetings, ({ one, many }) => ({
-//   group: one(groups, {
-//     fields: [meetings.groupId],
-//     references: [groups.id],
-//   }),
-//   creator: one(users, {
-//     fields: [meetings.creatorId],
-//     references: [users.id],
-//   }),
-//   ideas: many(ideas),
-// }));
+export const meetingsRelations = relations(meetings, ({ one, many }) => ({
+  group: one(groups, {
+    fields: [meetings.groupId],
+    references: [groups.id],
+  }),
+  creator: one(users, {
+    fields: [meetings.creatorId],
+    references: [users.id],
+  }),
+  members: many(meetingMembers),
+  ideas: many(ideas),
+}));
+
+export const meetingMembersRelations = relations(meetingMembers, ({ one }) => ({
+  meeting: one(meetings, {
+    fields: [meetingMembers.meetingId],
+    references: [meetings.id],
+  }),
+  user: one(users, {
+    fields: [meetingMembers.userId],
+    references: [users.id],
+  }),
+}));
+

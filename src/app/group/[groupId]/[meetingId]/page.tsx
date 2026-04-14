@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { meetings,ideas,users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { meetings,ideas,users, groups, groupMembers } from "@/db/schema";
+import { eq, desc, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { submitIdea } from "@/app/actions";
 import { cookies } from "next/headers";
@@ -8,6 +8,8 @@ import VoteButton from "@/components/VoteButton";
 
 import DeleteMeetingButton from "@/components/DeleteMeetingButton";
 import DeleteIdeaButton from "@/components/DeleteIdeaButton";
+
+import AddMeetingMembersButton from "@/components/AddMeetingMembersButton";
 
 
 interface MeetingPageProps {
@@ -43,6 +45,24 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
     orderBy: (ideas, { desc }) => [desc(ideas.createdAt)],
   });
 
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.id, groupId),
+  });
+
+  const myGroupMembership = currentUserId
+    ? await db.query.groupMembers.findFirst({
+        where: and(
+          eq(groupMembers.groupId, groupId),
+          eq(groupMembers.userId, currentUserId)
+        ),
+      })
+    : null;
+
+  const canManageMeetingMembers =
+    isOwner ||
+    group?.creatorId === currentUserId ||
+    myGroupMembership?.role === "admin";
+
   return (
    <main className="p-10 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-10">
@@ -50,6 +70,13 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
           <h1 className="text-3xl font-bold">{meeting.title}</h1>
           <p className="text-gray-500 font-mono text-sm">Organized by {isOwner ? "You" : "a Colleague"}</p>
         </div>
+
+        {canManageMeetingMembers && (
+          <AddMeetingMembersButton
+            meetingId={meetingId}
+            canManage={!!canManageMeetingMembers}
+          />
+        )}
 
         {/* Only show the Delete button if YOU are the owner */}
         {isOwner && (
@@ -63,6 +90,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
       <form action={submitIdea} className="mb-10 flex gap-2">
         {/* WE NEED A HIDDEN INPUT TO SEND THE MEETING ID */}
         <input type="hidden" name="meetingId" value={meetingId} />
+        <input type="hidden" name="groupId" value={groupId} />
         
         <input 
           name="content" 

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, groups, meetings, users, votes, groupMembers } from "@/db/schema";
+import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers } from "@/db/schema";
 import { eq, and, or, ilike, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -176,11 +176,19 @@ export async function createMeeting(formData: FormData) {
   }
 
   // 3. Save with the creatorId
-  await db.insert(meetings).values({
+  const [newMeeting] = await db.insert(meetings).values({
     title: title,
     creatorId: userId,
     groupId,
+  }).returning();
+
+  await db.insert(meetingMembers).values({
+    meetingId: newMeeting.id,
+    userId: userId,
+    role: "admin"
   });
+
+
   revalidatePath(`/group/${groupId}`); 
 }
 
@@ -397,5 +405,176 @@ export async function inviteUserToGroup(
   }
 
   revalidatePath(`/group/${groupId}`);
+  return { ok: true };
+}
+
+
+async function assertCanManageMeeting(
+  meetingId: string,
+  userId: string
+): Promise<{ ok: true; meeting: { id: string; groupId: string; creatorId: string } } | { ok: false }> {
+  const meeting = await db.query.meetings.findFirst({
+    where: eq(meetings.id, meetingId),
+  });
+
+  if (!meeting) return { ok: false };
+
+  // Meeting creator can always manage
+  if (meeting.creatorId === userId) {
+    return { ok: true, meeting };
+  }
+
+  // Group creator/admin can also manage (same rule style as groups)
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.id, meeting.groupId),
+  });
+
+  if (!group) return { ok: false };
+
+  if (group.creatorId === userId) {
+    return { ok: true, meeting };
+  }
+
+  const groupMembership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, meeting.groupId),
+      eq(groupMembers.userId, userId)
+    ),
+  });
+
+  if (groupMembership?.role === "admin") {
+    return { ok: true, meeting };
+  }
+
+  return { ok: false };
+}
+
+export async function searchUsersForMeeting(
+  meetingId: string,
+  query: string
+): Promise<{ ok: true; users: SearchableUser[] } | { ok: false; error: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  if (!userId) {
+    return { ok: false, error: "You must be signed in." };
+  }
+  const permission = await assertCanManageMeeting(meetingId, userId);
+  if (!permission.ok) {
+    return { ok: false, error: "You do not have permission to add meeting members." };
+  }
+
+  const trimmed = query.trim();
+  if (trimmed.length < 2) {
+    return { ok: true, users: [] };
+  }
+
+  const groupId = permission.meeting.groupId;
+
+  // Only allow users already in this group
+  const groupRows = await db
+    .select({ userId: groupMembers.userId })
+    .from(groupMembers)
+    .where(eq(groupMembers.groupId, groupId));
+
+  const groupUserIds = groupRows.map((r) => r.userId);
+
+  if (groupUserIds.length === 0) {
+    return { ok: true, users: [] };
+  }
+
+  // Exclude users already in this meeting
+  const meetingRows = await db
+    .select({ userId: meetingMembers.userId })
+    .from(meetingMembers)
+    .where(eq(meetingMembers.meetingId, meetingId));
+
+  const meetingUserIds = meetingRows.map((r) => r.userId);
+
+  const searchPattern = `%${trimmed}%`;
+
+  const whereParts = [
+    or(ilike(users.name, searchPattern), ilike(users.email, searchPattern)),
+    // must be in group
+    // NOTE: if you have inArray imported, use it. If not, keep this by filtering after query.
+  ];
+
+  // Simpler and reliable approach with current imports: query then filter in memory
+  const candidates = await db
+    .select({ id: users.id, name: users.name, email: users.email })
+    .from(users)
+    .where(and(...whereParts))
+    .limit(100);
+
+  const allowed = candidates
+    .filter((u) => groupUserIds.includes(u.id))
+    .filter((u) => !meetingUserIds.includes(u.id))
+    .filter((u) => u.id !== userId) // optional: don't show yourself
+    .slice(0, 20);
+
+  return { ok: true, users: allowed };
+}
+
+export async function inviteUserToMeeting(
+  meetingId: string,
+  targetUserId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  if (!userId) {
+    return { ok: false, error: "You must be signed in." };
+  }
+
+  const permission = await assertCanManageMeeting(meetingId, userId);
+  if (!permission.ok) {
+    return { ok: false, error: "You do not have permission to add meeting members." };
+  }
+
+  const groupId = permission.meeting.groupId;
+
+  // Ensure target exists
+  const target = await db.query.users.findFirst({
+    where: eq(users.id, targetUserId),
+  });
+  if (!target) {
+    return { ok: false, error: "User not found." };
+  }
+
+  // Ensure target is in group first
+  const targetGroupMembership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, groupId),
+      eq(groupMembers.userId, targetUserId)
+    ),
+  });
+
+  if (!targetGroupMembership) {
+    return { ok: false, error: "User must be a group member first." };
+  }
+
+  // Prevent duplicate meeting membership
+  const existingMeetingMembership = await db.query.meetingMembers.findFirst({
+    where: and(
+      eq(meetingMembers.meetingId, meetingId),
+      eq(meetingMembers.userId, targetUserId)
+    ),
+  });
+
+  if (existingMeetingMembership) {
+    return { ok: false, error: "User is already in this meeting." };
+  }
+
+  try {
+    await db.insert(meetingMembers).values({
+      meetingId,
+      userId: targetUserId,
+      role: "member",
+    });
+  } catch {
+    return { ok: false, error: "Could not add user to meeting." };
+  }
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
   return { ok: true };
 }

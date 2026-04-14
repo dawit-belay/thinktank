@@ -17,10 +17,10 @@ export default function VoteButton({
   return (
     <button 
       onClick={() => toggleVote(ideaId, meetingId, groupId)}
-      className={`flex items-center gap-2 px-3 py-1 rounded-full border transition-all ${
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-all ${
         hasVoted 
-          ? "bg-blue-600 text-white border-blue-600" 
-          : "bg-white text-gray-500 border-gray-200 hover:border-blue-400"
+          ? "border-emerald-600 bg-emerald-600 text-white" 
+          : "border-zinc-200 bg-white text-zinc-500 hover:border-emerald-400 hover:text-emerald-700"
       }`}
     >
       <span>{hasVoted ? "▲" : "△"}</span>

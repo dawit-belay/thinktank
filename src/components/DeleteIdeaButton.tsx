@@ -10,7 +10,7 @@ export default function DeleteIdeaButton({ ideaId, meetingId, groupId }: { ideaI
           await deleteIdea(ideaId, meetingId, groupId);
         }
       }}
-      className="bg-red-50 text-red-500 hover:bg-red-100 p-1.5 rounded-md transition"
+      className="rounded-md bg-red-50 p-1.5 text-red-500 transition hover:bg-red-100"
       title="Delete Idea"
     >
       <X size={16} />

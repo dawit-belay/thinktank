@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { submitIdea } from "@/app/actions";
 import { cookies } from "next/headers";
 import VoteButton from "@/components/VoteButton";
+import Link from "next/link";
+import { ArrowLeft, Lightbulb, PlusCircle, Sparkles, Users } from "lucide-react";
 
 import DeleteMeetingButton from "@/components/DeleteMeetingButton";
 import DeleteIdeaButton from "@/components/DeleteIdeaButton";
@@ -64,86 +66,152 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
     myGroupMembership?.role === "admin";
 
   return (
-   <main className="p-10 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-10">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold">{meeting.title}</h1>
-          <p className="text-gray-500 font-mono text-sm">Organized by {isOwner ? "You" : "a Colleague"}</p>
-        </div>
-
-        {canManageMeetingMembers && (
-          <AddMeetingMembersButton
-            meetingId={meetingId}
-            canManage={!!canManageMeetingMembers}
-          />
-        )}
-
-        {/* Only show the Delete button if YOU are the owner */}
-        {isOwner && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 font-medium">Meeting Admin</span>
-            <DeleteMeetingButton id={meetingId} groupId={groupId} />
-          </div>
-        )}
+   <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-emerald-50/90 via-stone-50 to-zinc-100 px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      <div aria-hidden className="pointer-events-none fixed inset-0">
+        <div className="absolute -left-36 top-0 h-[30rem] w-[30rem] rounded-full bg-emerald-300/35 blur-3xl" />
+        <div className="absolute right-0 top-20 h-[24rem] w-[24rem] rounded-full bg-sky-200/35 blur-3xl" />
       </div>
-      {/* 3. The Submit Idea Form */}
-      <form action={submitIdea} className="mb-10 flex gap-2">
-        {/* WE NEED A HIDDEN INPUT TO SEND THE MEETING ID */}
-        <input type="hidden" name="meetingId" value={meetingId} />
-        <input type="hidden" name="groupId" value={groupId} />
-        
-        <input 
-          name="content" 
-          placeholder="Type a new idea..." 
-          className="flex-grow p-3 border rounded-lg bg-white text-black"
-          required
-        />
-        <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700">
-          Add Idea
-        </button>
-      </form>
 
-      {/* 4. The Ideas List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {meetingIdeas.map((idea) =>{
-        // Check if the currently logged-in user is in the list of votes
-          const hasVoted = idea.votes.some(v => v.userId === currentUserId);
-          const canDelete = idea.authorId === currentUserId || isOwner;
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <nav className="mb-8 flex items-center gap-3 text-sm">
+          <Link
+            href={`/group/${groupId}`}
+            className="group inline-flex items-center gap-2 rounded-full border border-zinc-200/90 bg-white/90 px-3 py-1.5 font-medium text-zinc-600 shadow-sm shadow-zinc-200/50 transition hover:border-emerald-300 hover:text-emerald-800"
+          >
+            <ArrowLeft size={16} className="transition group-hover:-translate-x-0.5" />
+            Back to group
+          </Link>
+          <span className="text-zinc-400" aria-hidden>/</span>
+          <span className="max-w-[16rem] truncate font-medium text-zinc-700">
+            Meeting room
+          </span>
+        </nav>
 
-         return(
-          <div key={idea.id} className="group relative p-4 border rounded-xl shadow-sm bg-yellow-50 border-yellow-200">
-            {/* Delete Button - Top Right */}
-            
-            {canDelete && (
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <DeleteIdeaButton ideaId={idea.id} meetingId={meetingId} groupId={groupId} />
+        <header className="mb-10 grid gap-6 rounded-3xl border border-zinc-200/80 bg-white/80 p-6 shadow-sm shadow-zinc-200/40 backdrop-blur-sm md:p-8 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-800">
+              <Sparkles size={14} className="text-emerald-600" />
+              Meeting Room
+            </div>
+            <h1 className="text-balance text-3xl font-black tracking-tight text-zinc-900 md:text-4xl">
+              {meeting.title}
+            </h1>
+            <p className="mt-2 text-sm text-zinc-600">
+              Organized by <span className="font-semibold">{isOwner ? "You" : "a colleague"}</span>
+              {" · "}
+              <span className="font-semibold">{meetingIdeas.length}</span> ideas shared
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {canManageMeetingMembers && (
+              <AddMeetingMembersButton
+                meetingId={meetingId}
+                canManage={!!canManageMeetingMembers}
+              />
+            )}
+            {isOwner && (
+              <div className="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white/90 px-2 py-1.5 shadow-sm">
+                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Meeting Admin
+                </span>
+                <DeleteMeetingButton id={meetingId} groupId={groupId} />
               </div>
             )}
-            <p className="text-gray-800">{idea.content}</p>
-
-            <div className="flex items-center justify-between mt-6 pt-4 border-t border-zinc-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-700 font-bold text-xs border border-zinc-200">
-                    {idea.author.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-zinc-900">{idea.author.name}</p>
-                    <p className="text-[10px] text-zinc-400 uppercase font-bold tracking-tighter">Contributor</p>
-                  </div>
-                </div>
-
-                {/* The new Voting Button */}
-                <VoteButton 
-                  ideaId={idea.id} 
-                  meetingId={meetingId} 
-                  count={idea.votes.length} 
-                  hasVoted={hasVoted}
-                  groupId={groupId}
-                />
-              </div>
           </div>
-          )
-        })}
+        </header>
+
+        <section className="mb-10 rounded-2xl border border-zinc-200/90 bg-white/90 p-4 shadow-sm shadow-zinc-200/40 md:p-5">
+          <form action={submitIdea} className="flex flex-col gap-3 sm:flex-row">
+            <input type="hidden" name="meetingId" value={meetingId} />
+            <input type="hidden" name="groupId" value={groupId} />
+
+            <div className="relative flex-1">
+              <Lightbulb
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-amber-500"
+              />
+              <input
+                name="content"
+                placeholder="Type a new idea..."
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 py-3 pl-10 pr-3 text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/20 transition hover:bg-emerald-600"
+            >
+              <PlusCircle size={16} />
+              Add Idea
+            </button>
+          </form>
+        </section>
+
+        <section>
+          <div className="mb-6 flex items-center gap-2 text-zinc-700">
+            <Users size={18} className="text-emerald-600" />
+            <p className="text-sm font-semibold uppercase tracking-wide">
+              Ideas Board
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {meetingIdeas.map((idea) => {
+              const hasVoted = idea.votes.some((v) => v.userId === currentUserId);
+              const canDelete = idea.authorId === currentUserId || isOwner;
+
+              return (
+                <article
+                  key={idea.id}
+                  className="group relative overflow-hidden rounded-2xl border border-zinc-200/90 bg-white/95 p-4 shadow-sm shadow-zinc-200/40 transition hover:shadow-md hover:shadow-zinc-300/40"
+                >
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-amber-200/45 blur-2xl"
+                  />
+
+                  {canDelete && (
+                    <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <DeleteIdeaButton
+                        ideaId={idea.id}
+                        meetingId={meetingId}
+                        groupId={groupId}
+                      />
+                    </div>
+                  )}
+
+                  <p className="relative pr-8 text-zinc-800">{idea.content}</p>
+
+                  <div className="mt-6 flex items-center justify-between border-t border-zinc-100 pt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-xs font-bold text-zinc-700">
+                        {idea.author.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-zinc-900">
+                          {idea.author.name}
+                        </p>
+                        <p className="text-[10px] font-bold uppercase tracking-tighter text-zinc-400">
+                          Contributor
+                        </p>
+                      </div>
+                    </div>
+
+                    <VoteButton
+                      ideaId={idea.id}
+                      meetingId={meetingId}
+                      count={idea.votes.length}
+                      hasVoted={hasVoted}
+                      groupId={groupId}
+                    />
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
       </div>
     </main>
   );

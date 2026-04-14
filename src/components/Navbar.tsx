@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { logout } from "@/app/actions";
 import ProfileDropdown from "./ProfileDropdown"
 
 export default async function Navbar() {
@@ -20,24 +19,38 @@ export default async function Navbar() {
   }
 
   return (
-    <nav className="flex items-center justify-between px-10 py-4 bg-white border-b border-zinc-200">
-      <div className="flex items-center gap-10">
-        <Link href="/" className="text-xl font-bold text-blue-600">
-          Thinktank
-        </Link>
-      </div>
+    <nav className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/80 px-5 py-3 backdrop-blur-md md:px-10">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
+        <div className="flex items-center gap-10">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-3.5 py-1.5 text-base font-semibold tracking-tight text-white transition hover:bg-zinc-700"
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            Thinktank
+          </Link>
+        </div>
 
-      <div className="flex items-center gap-6">
-        {user ? <ProfileDropdown userName={user.name} />: (
-          <>
-            <Link href="/login" className="text-gray-600 hover:text-black transition">
-              Login
-            </Link>
-            <Link href="/signup" className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-              Sign Up
-            </Link>
-          </>
-        )}
+        <div className="flex items-center gap-2 md:gap-3">
+          {user ? (
+            <ProfileDropdown userName={user.name} />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+              >
+                Login
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );

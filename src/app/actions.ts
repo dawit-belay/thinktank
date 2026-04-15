@@ -246,9 +246,17 @@ export async function deleteMeeting(id: string, groupId: string) {
   redirect(`/group/${groupId}`);
 }
 
-export async function deleteIdea(ideaId: string, meetingId: string, groupId: string) {
+export async function deleteIdea(
+  ideaId: string,
+  meetingId: string,
+  groupId: string
+): Promise<{ ok: boolean; error?: string }> {
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
+
+  if (!userId) {
+    return { ok: false, error: "You must be logged in." };
+  }
 
   // 1. Fetch the idea and the meeting to check permissions
   const idea = await db.query.ideas.findFirst({
@@ -256,20 +264,25 @@ export async function deleteIdea(ideaId: string, meetingId: string, groupId: str
     with: { meeting: true }
   });
 
-  if (!idea) throw new Error("Idea not found");
+  if (!idea) return { ok: false, error: "Idea not found." };
 
   // 2. SECURITY CHECK: Are you the Author OR the Meeting Owner?
   const isAuthor = idea.authorId === userId;
   const isMeetingOwner = idea.meeting.creatorId === userId;
 
   if (!isAuthor && !isMeetingOwner) {
-    throw new Error("Unauthorized to delete this idea");
+    return { ok: false, error: "Unauthorized to delete this idea." };
   }
 
   // 3. Delete the idea (Votes will auto-delete due to 'cascade' in schema)
-  await db.delete(ideas).where(eq(ideas.id, ideaId));
+  try {
+    await db.delete(ideas).where(eq(ideas.id, ideaId));
+  } catch {
+    return { ok: false, error: "Could not delete idea." };
+  }
 
   revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
 }
 
 

@@ -173,7 +173,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                   />
 
                   {canDelete && (
-                    <div className="absolute right-3 top-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    <div className="absolute right-3 top-3 z-20 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                       <DeleteIdeaButton
                         ideaId={idea.id}
                         meetingId={meetingId}

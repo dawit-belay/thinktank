@@ -243,7 +243,7 @@ export async function deleteMeeting(id: string, groupId: string) {
 
   // 4. Go back to the dashboard
   revalidatePath(`/group/${groupId}`);
-  redirect("/");
+  redirect(`/group/${groupId}`);
 }
 
 export async function deleteIdea(ideaId: string, meetingId: string, groupId: string) {
@@ -292,7 +292,7 @@ export async function toggleVote(ideaId: string, meetingId: string, groupId: str
     await db.insert(votes).values({ userId, ideaId });
   }
 
-  `/group/${groupId}/${meetingId}`
+  revalidatePath(`/group/${groupId}/${meetingId}`);
 }
 
 export type SearchableUser = {

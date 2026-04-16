@@ -63,6 +63,10 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const allmeetings = await db.query.meetings.findMany({
     where: eq(meetings.groupId, groupId),
     orderBy: [desc(meetings.createdAt)],
+    with: {
+      ideas: true,
+      members: true,
+    },
   });
 
   const groupRow = await db.query.groups.findFirst({

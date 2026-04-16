@@ -1,12 +1,18 @@
 import Link from "next/link";
 // import DeleteMeetingButton from "./DeleteMeetingButton";
-import { Calendar, ArrowUpRight } from "lucide-react";
+import { Calendar, ArrowUpRight, DoorOpen } from "lucide-react";
 
 export default function GroupCard({ 
   group, 
 //   isOwner 
 }: { 
-  group: { id: string; name: string; createdAt: Date | string }, 
+  group: {
+    id: string;
+    name: string;
+    description?: string | null;
+    createdAt: Date | string;
+    meetings: { id: string }[];
+  }, 
 //   isOwner: boolean 
 }) {
   return (
@@ -22,13 +28,17 @@ export default function GroupCard({
           </h3>
           {/* {isOwner && <DeleteMeetingButton id={meeting.id} />} */}
         </div>
-        <p className="mt-1 font-mono text-xs uppercase tracking-tighter text-zinc-400">
-          ID: {group.id.slice(0, 8)}...
+        <p className="mt-2 line-clamp-2 text-sm text-zinc-600">
+          {group.description?.trim() || "A shared workspace for brainstorming and collaboration."}
         </p>
       </div>
 
       <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-4">
         <div className="flex gap-4 text-xs font-medium text-zinc-500">
+           <span className="flex items-center gap-1.5">
+             <DoorOpen size={14} />
+             {group.meetings.length} {group.meetings.length === 1 ? "room" : "rooms"}
+           </span>
            <span className="flex items-center gap-1.5">
              <Calendar size={14} />
              {new Date(group.createdAt).toLocaleDateString()}

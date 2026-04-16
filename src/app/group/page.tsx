@@ -32,6 +32,9 @@ export default async function group() {
   const allgroups = await db.query.groups.findMany({
     where:eq(groups.creatorId,userId),
     orderBy: [desc(groups.createdAt)],
+    with: {
+      meetings: true,
+    },
   });
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-emerald-50/90 via-stone-50 to-zinc-100 px-5 pb-20 pt-10 text-zinc-900 md:px-8 md:pt-14">

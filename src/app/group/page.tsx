@@ -3,10 +3,10 @@ import { db } from "@/db";
 import { groups,users } from "@/db/schema";
 import { eq,desc } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Sparkles, PlusCircle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import GroupCard from "@/components/groupCard";
+import CreateGroupButton from "@/components/CreateGroupButton";
 
 export default async function group() {
     // 1. Check for the cookie
@@ -58,13 +58,7 @@ export default async function group() {
             </p>
           </div>
 
-          <Link 
-            href={`/group/create_new_group`}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-emerald-500/20 transition hover:bg-emerald-600"
-          >
-            <PlusCircle size={18} />
-            Create new group
-          </Link>
+          <CreateGroupButton />
         </header>
 
         <section>

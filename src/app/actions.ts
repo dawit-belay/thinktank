@@ -222,6 +222,7 @@ export async function creategroup(formData: FormData) {
   });
 
   revalidatePath("/group"); 
+  redirect("/group");
 }
 
 export async function deleteMeeting(id: string, groupId: string) {

@@ -38,6 +38,13 @@ export const meetings = pgTable("meetings", {
   creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  stage: text("stage")
+  .$type<"ideation" | "decision" | "summary">()
+  .default("ideation")
+  .notNull(),
+  decisionText: text("decision_text"),
+  summary: text("summary"),
+  closedAt: timestamp("closed_at"),
 });
 
 // The Members Table (The link between Users and meetings)

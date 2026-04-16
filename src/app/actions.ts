@@ -591,3 +591,118 @@ export async function inviteUserToMeeting(
   revalidatePath(`/group/${groupId}/${meetingId}`);
   return { ok: true };
 }
+
+export async function updateMeetingStage(
+  meetingId: string,
+  stage: "ideation" | "decision" | "summary",
+  groupId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const meeting = await db.query.meetings.findFirst({
+    where: eq(meetings.id, meetingId),
+  });
+  if (!meeting) return { ok: false, error: "Meeting not found." };
+
+  // Permission: meeting owner or group admin
+  const isOwner = meeting.creatorId === userId;
+  let canManage = isOwner;
+
+  if (!canManage) {
+    const membership = await db.query.groupMembers.findFirst({
+      where: and(
+        eq(groupMembers.groupId, meeting.groupId),
+        eq(groupMembers.userId, userId)
+      ),
+    });
+    canManage = membership?.role === "admin";
+  }
+
+  if (!canManage) {
+    return { ok: false, error: "Unauthorized." };
+  }
+
+  await db
+    .update(meetings)
+    .set({
+      stage,
+      ...(stage === "summary" ? { closedAt: new Date() } : {}),
+    })
+    .where(eq(meetings.id, meetingId));
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function saveMeetingDecision(
+  meetingId: string,
+  groupId: string,
+  decisionText: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const meeting = await db.query.meetings.findFirst({
+    where: eq(meetings.id, meetingId),
+  });
+  if (!meeting) return { ok: false, error: "Meeting not found." };
+
+  const isOwner = meeting.creatorId === userId;
+  const membership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, meeting.groupId),
+      eq(groupMembers.userId, userId)
+    ),
+  });
+  const isAdmin = membership?.role === "admin";
+
+  if (!isOwner && !isAdmin) return { ok: false, error: "Unauthorized." };
+
+  const trimmed = decisionText.trim();
+  if (!trimmed) return { ok: false, error: "Decision cannot be empty." };
+
+  await db
+    .update(meetings)
+    .set({ decisionText: trimmed })
+    .where(eq(meetings.id, meetingId));
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function saveMeetingSummary(
+  meetingId: string,
+  groupId: string,
+  summary: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const meeting = await db.query.meetings.findFirst({
+    where: eq(meetings.id, meetingId),
+  });
+  if (!meeting) return { ok: false, error: "Meeting not found." };
+
+  const isOwner = meeting.creatorId === userId;
+  const membership = await db.query.groupMembers.findFirst({
+    where: and(
+      eq(groupMembers.groupId, meeting.groupId),
+      eq(groupMembers.userId, userId)
+    ),
+  });
+  const isAdmin = membership?.role === "admin";
+
+  if (!isOwner && !isAdmin) return { ok: false, error: "Unauthorized." };
+
+  await db
+    .update(meetings)
+    .set({ summary: summary.trim() || null })
+    .where(eq(meetings.id, meetingId));
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}

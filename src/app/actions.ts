@@ -190,6 +190,7 @@ export async function createMeeting(formData: FormData) {
 
 
   revalidatePath(`/group/${groupId}`); 
+  redirect(`/group/${groupId}`);
 }
 
 export async function creategroup(formData: FormData) {

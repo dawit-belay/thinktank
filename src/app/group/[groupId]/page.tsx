@@ -17,6 +17,7 @@ import {
 
 import MeetingCard from "@/components/MeetingCard";
 import AddMembersButton from "@/components/AddMembersButton";
+import CreateMeetingButton from "@/components/CreateMeetingButton";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -169,13 +170,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-            <Link
-              href={`/group/${groupId}/create_new_meeting`}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3.5 text-sm font-bold uppercase tracking-wide text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-600"
-            >
-              <PlusCircle size={18} strokeWidth={2.25} />
-              New room
-            </Link>
+            <CreateMeetingButton groupId={groupId} />
             <AddMembersButton
               groupId={groupId}
               canManage={!!canManageMembers}
@@ -282,13 +277,12 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 Create your first brainstorming room and invite the group to
                 share ideas.
               </p>
-              <Link
-                href={`/group/${groupId}/create_new_meeting`}
-                className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-emerald-500/20 transition hover:bg-emerald-600"
-              >
-                <PlusCircle size={18} />
-                Create a room
-              </Link>
+              <div className="mt-8">
+                <CreateMeetingButton
+                  groupId={groupId}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-md shadow-emerald-500/20 transition hover:bg-emerald-600"
+                />
+              </div>
             </div>
           )}
         </section>

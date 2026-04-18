@@ -1,4 +1,5 @@
 import Navbar from "@/components/Navbar";
+import SupabaseProvider from "@/components/SupabaseProvider";
 import "./globals.css";
 
 export default function RootLayout({
@@ -9,11 +10,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-zinc-50 min-h-screen">
-        {/* Navbar is outside of {children} so it never disappears */}
-        <Navbar />
-        
-        {/* This is where Home, Login, or MeetingRoom will render */}
-        {children}
+        <SupabaseProvider>
+          <Navbar />
+          {children}
+        </SupabaseProvider>
       </body>
     </html>
   );

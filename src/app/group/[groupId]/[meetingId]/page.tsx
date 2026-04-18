@@ -19,6 +19,7 @@ import MeetingParticipantsPanel from "@/components/meeting/MeetingParticipantsPa
 import MeetingStageTabs from "@/components/meeting/MeetingStageTabs";
 import { DecisionPanel } from "@/components/meeting/DecisionPanel";
 import SummaryPanel from "@/components/meeting/SummaryPanel";
+import MeetingIdeasRealtime from "@/components/MeetingIdeasRealtime";
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string, groupId: string}>;
@@ -76,6 +77,10 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
 
   return (
    <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-emerald-50/90 via-stone-50 to-zinc-100 px-5 pb-20 pt-10 md:px-8 md:pt-14">
+      <MeetingIdeasRealtime
+        meetingId={meetingId}
+        ideaIds={meetingIdeas.map((i) => i.id)}
+      />
       <div aria-hidden className="pointer-events-none fixed inset-0">
         <div className="absolute -left-36 top-0 h-[30rem] w-[30rem] rounded-full bg-emerald-300/35 blur-3xl" />
         <div className="absolute right-0 top-20 h-[24rem] w-[24rem] rounded-full bg-sky-200/35 blur-3xl" />

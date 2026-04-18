@@ -9,19 +9,14 @@ export function proxy(request: NextRequest) {
   // 2. Define which paths are "Protected"
   const isProtectedPath = request.nextUrl.pathname.startsWith('/group');
 
-  // 3. Define which paths are "Public" (Login/Signup)
-  const isAuthPath = request.nextUrl.pathname.startsWith('/login') || 
-                     request.nextUrl.pathname.startsWith('/signup');
-
-  // LOGIC: If trying to access a protected room without a cookie -> Redirect to Login
+  // LOGIC: If trying to access a protected room without a cookie -> Redirect to home
   if (isProtectedPath && !userId) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
-  // LOGIC: If already logged in and trying to go to Login/Signup -> Redirect to Home
-  if (isAuthPath && userId) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
+  // Do not redirect /login or /signup based on cookie alone: a stale `user_id` cookie
+  // (e.g. after DB reset) would bounce users back to "/" and make auth links feel broken.
+  // Real sessions are handled in `redirectIfSignedIn()` on those pages.
 
   return NextResponse.next();
 }

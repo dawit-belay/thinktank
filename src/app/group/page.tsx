@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { groups,users } from "@/db/schema";
-import { eq,desc } from "drizzle-orm";
+import { groups,users,groupMembers } from "@/db/schema";
+import { eq,desc,inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Sparkles } from "lucide-react";
 
@@ -29,13 +29,18 @@ export default async function group() {
   }
 
   // Fetch all meetings, newest first
+  const memberGroupIdsQuery = db
+    .select({ groupId: groupMembers.groupId })
+    .from(groupMembers)
+    .where(eq(groupMembers.userId, userId));
   const allgroups = await db.query.groups.findMany({
-    where:eq(groups.creatorId,userId),
+    where: inArray(groups.id, memberGroupIdsQuery),
     orderBy: [desc(groups.createdAt)],
     with: {
       meetings: true,
     },
   });
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-emerald-50/90 via-stone-50 to-zinc-100 px-5 pb-20 pt-10 text-zinc-900 md:px-8 md:pt-14">
       <div aria-hidden className="pointer-events-none fixed inset-0">

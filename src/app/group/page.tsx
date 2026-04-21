@@ -40,6 +40,12 @@ export default async function group() {
       meetings: true,
     },
   });
+  const memberships = await db.query.groupMembers.findMany({
+    where: eq(groupMembers.userId, userId),
+  });
+  const roleByGroupId = new Map(
+    memberships.map((membership) => [membership.groupId, membership.role])
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-gradient-to-b from-emerald-50/90 via-stone-50 to-zinc-100 px-5 pb-20 pt-10 text-zinc-900 md:px-8 md:pt-14">
@@ -74,13 +80,18 @@ export default async function group() {
 
           {allgroups.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {allgroups.map((group) => (
-                <GroupCard 
-                  key={group.id} 
-                  group={group} 
-                  // isOwner={group.creatorId === userId} 
-                />
-              ))}
+              {allgroups.map((group) => {
+                const isAdmin =
+                  group.creatorId === userId ||
+                  roleByGroupId.get(group.id) === "admin";
+                return (
+                  <GroupCard
+                    key={group.id}
+                    group={group}
+                    isAdmin={isAdmin}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="rounded-3xl border border-dashed border-emerald-200/80 bg-white/70 px-8 py-20 text-center shadow-sm shadow-zinc-200/30 backdrop-blur-sm">

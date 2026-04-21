@@ -4,7 +4,7 @@ import { Calendar, ArrowUpRight, DoorOpen } from "lucide-react";
 
 export default function GroupCard({ 
   group, 
-//   isOwner 
+  isAdmin,
 }: { 
   group: {
     id: string;
@@ -13,7 +13,7 @@ export default function GroupCard({
     createdAt: Date | string;
     meetings: { id: string }[];
   }, 
-//   isOwner: boolean 
+  isAdmin: boolean;
 }) {
   return (
     <div className="group/card relative flex h-48 flex-col justify-between overflow-hidden rounded-2xl border border-zinc-200/90 bg-white/95 p-6 shadow-md shadow-zinc-200/50 transition-all duration-300 hover:border-emerald-300/80 hover:shadow-lg hover:shadow-emerald-500/10">
@@ -26,7 +26,15 @@ export default function GroupCard({
           <h3 className="text-xl font-bold text-zinc-900 transition-colors group-hover/card:text-emerald-700">
             {group.name}
           </h3>
-          {/* {isOwner && <DeleteMeetingButton id={meeting.id} />} */}
+          <span
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+              isAdmin
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-zinc-200 bg-zinc-100 text-zinc-600"
+            }`}
+          >
+            {isAdmin ? "Admin" : "Member"}
+          </span>
         </div>
         <p className="mt-2 line-clamp-2 text-sm text-zinc-600">
           {group.description?.trim() || "A shared workspace for brainstorming and collaboration."}

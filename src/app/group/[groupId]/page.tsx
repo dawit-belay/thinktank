@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { meetings, users, ideas, groups, groupMembers } from "@/db/schema";
+import { meetings, users, ideas, groups, groupMembers, meetingMembers } from "@/db/schema";
 import Link from "next/link";
-import { eq, desc, count, and } from "drizzle-orm";
+import { eq, desc, count, and,or, inArray } from "drizzle-orm";
 import { Outfit } from "next/font/google";
 import {
   ArrowLeft,
@@ -61,14 +61,31 @@ export default async function GroupPage({ params }: GroupPageProps) {
   });
   const totalKarma = myIdeas.reduce((acc, idea) => acc + idea.votes.length, 0);
 
-  const allmeetings = await db.query.meetings.findMany({
-    where: eq(meetings.groupId, groupId),
+
+  const memberMeetingIdsQuery = db
+    .select({ meetingId: meetingMembers.meetingId })
+    .from(meetingMembers)
+    .where(eq(meetingMembers.userId, userId));
+
+  const allMeetings = await db.query.meetings.findMany({
+    where: and(
+      eq(meetings.groupId, groupId),
+      or(
+        inArray(meetings.id, memberMeetingIdsQuery),eq(meetings.creatorId,userId!))
+     ),
     orderBy: [desc(meetings.createdAt)],
     with: {
       ideas: true,
       members: true,
     },
   });
+
+  const memberships = await db.query.meetingMembers.findMany({
+    where: eq(meetingMembers.userId, userId),
+  });
+  const roleByMeetingId = new Map(
+    memberships.map((membership) => [membership.meetingId, membership.role])
+  );
 
   const groupRow = await db.query.groups.findFirst({
     where: eq(groups.id, groupId),
@@ -163,8 +180,8 @@ export default async function GroupPage({ params }: GroupPageProps) {
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-zinc-200/90 bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm shadow-zinc-200/40">
                 <DoorOpen size={14} className="text-zinc-500" />
-                {allmeetings.length}{" "}
-                {allmeetings.length === 1 ? "room" : "rooms"}
+                {allMeetings.length}{" "}
+                {allMeetings.length === 1 ? "room" : "rooms"}
               </span>
             </div>
           </div>
@@ -250,17 +267,26 @@ export default async function GroupPage({ params }: GroupPageProps) {
             </div>
           </div>
 
-          {allmeetings.length > 0 ? (
+          {allMeetings.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {allmeetings.map((meeting) => (
-                <MeetingCard
-                  key={meeting.id}
-                  groupId={groupId}
-                  meetingid={meeting.id}
-                  meeting={meeting}
-                  isOwner={meeting.creatorId === userId}
-                />
-              ))}
+              {allMeetings.map((meeting) => {
+                const isAdmin =
+                  meeting.creatorId === userId ||
+                  roleByMeetingId.get(meeting.id) === "admin";
+                return (
+                  <MeetingCard
+                    key={meeting.id}
+                    groupId={groupId}
+                    meetingid={meeting.id}
+                    meeting={meeting}
+                    isOwner={meeting.creatorId === userId}
+                    isAdmin={isAdmin}
+                  />
+                );
+              }
+                
+
+              )}
             </div>
           ) : (
             <div className="relative overflow-hidden rounded-3xl border border-dashed border-emerald-200/80 bg-white/70 px-8 py-20 text-center shadow-sm shadow-zinc-200/30 backdrop-blur-sm">

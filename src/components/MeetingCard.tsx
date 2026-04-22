@@ -7,6 +7,7 @@ export default function MeetingCard({
   meetingid,
   groupId,
   isOwner,
+  isAdmin,
 }: {
   groupId: string;
   meeting: {
@@ -19,6 +20,7 @@ export default function MeetingCard({
   };
   meetingid: string;
   isOwner: boolean;
+  isAdmin: boolean;
 }) {
   const stageStyles = {
     ideation: "border-emerald-200 bg-emerald-50 text-emerald-800",
@@ -33,17 +35,13 @@ export default function MeetingCard({
         className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-emerald-200/40 blur-2xl transition-opacity group-hover/card:opacity-100"
       />
       <div className="relative">
-        <div className="mb-3 flex items-center gap-2">
+        <div className="mb-3 flex items-center justify-between">
           <span
             className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${stageStyles[meeting.stage]}`}
           >
             {meeting.stage}
           </span>
-        </div>
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="line-clamp-2 text-lg font-semibold tracking-tight text-zinc-900 transition-colors group-hover/card:text-emerald-700">
-            {meeting.title}
-          </h3>
+
           {isOwner && (
             <DeleteMeetingButton
               id={meeting.id}
@@ -51,6 +49,22 @@ export default function MeetingCard({
               variant="light"
             />
           )}
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="line-clamp-2 text-lg font-semibold tracking-tight text-zinc-900 transition-colors group-hover/card:text-emerald-700">
+            {meeting.title}
+          </h3>
+
+          <span
+            className={`rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+              isAdmin
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-zinc-200 bg-zinc-100 text-zinc-600"
+            }`}
+          >
+            {isAdmin ? "Admin" : "Member"}
+          </span>
+          
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3 text-xs font-medium text-zinc-500">

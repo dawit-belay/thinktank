@@ -44,6 +44,23 @@ export default function MeetingIdeasRealtime({
       }
     );
 
+    channel.on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "meetings",
+        filter: `id=eq.${meetingId}`,
+      },
+      (payload) => {
+        const oldStage = (payload.old as { stage?: string } | null)?.stage;
+        const newStage = (payload.new as { stage?: string } | null)?.stage;
+        if (oldStage !== newStage) {
+          router.refresh();
+        }
+      }
+    );
+
     if (voteFilter) {
       channel.on(
         "postgres_changes",

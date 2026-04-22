@@ -18,6 +18,7 @@ import {
 import MeetingCard from "@/components/MeetingCard";
 import AddMembersButton from "@/components/AddMembersButton";
 import CreateMeetingButton from "@/components/CreateMeetingButton";
+import GroupMeetingsRealtime from "@/components/GroupMeetingsRealtime";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -123,6 +124,7 @@ export default async function GroupPage({ params }: GroupPageProps) {
     <main
       className={`${outfit.className} relative min-h-screen overflow-hidden bg-gradient-to-b from-emerald-50/90 via-stone-50 to-zinc-100 text-zinc-900`}
     >
+      <GroupMeetingsRealtime groupId={groupId} />
       <div aria-hidden className="pointer-events-none fixed inset-0">
         <div className="absolute -left-40 top-0 h-[38rem] w-[38rem] rounded-full bg-emerald-300/35 blur-3xl" />
         <div className="absolute -right-32 top-[12%] h-[34rem] w-[34rem] rounded-full bg-violet-200/40 blur-3xl" />

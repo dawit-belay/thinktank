@@ -37,6 +37,8 @@ export const meetings = pgTable("meetings", {
   // NEW: Link to the User who created the meeting
   creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
   groupId: uuid("group_id").references(() => groups.id, { onDelete: "cascade" }).notNull(),
+  scheduledStartAt: timestamp("scheduled_start_at"),
+  scheduledEndAt: timestamp("scheduled_end_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   stage: text("stage")
   .$type<"ideation" | "decision" | "summary">()

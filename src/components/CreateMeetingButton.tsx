@@ -5,6 +5,13 @@ import { useFormStatus } from "react-dom";
 import { PlusCircle } from "lucide-react";
 import { createMeeting } from "@/app/actions";
 
+function getDefaultDateTimeLocal(minutesFromNow: number) {
+  const date = new Date(Date.now() + minutesFromNow * 60 * 1000);
+  date.setSeconds(0, 0);
+  const tzOffsetMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -84,6 +91,41 @@ export default function CreateMeetingButton({ groupId, className }: Props) {
                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
                 required
               />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="meeting-start"
+                  className="mb-2 block text-sm font-semibold text-zinc-700"
+                >
+                  Start time
+                </label>
+                <input
+                  id="meeting-start"
+                  name="scheduledStartAt"
+                  type="datetime-local"
+                  defaultValue={getDefaultDateTimeLocal(30)}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="meeting-end"
+                  className="mb-2 block text-sm font-semibold text-zinc-700"
+                >
+                  End time
+                </label>
+                <input
+                  id="meeting-end"
+                  name="scheduledEndAt"
+                  type="datetime-local"
+                  defaultValue={getDefaultDateTimeLocal(90)}
+                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                  required
+                />
+              </div>
             </div>
           </div>
 

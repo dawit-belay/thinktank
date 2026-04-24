@@ -8,6 +8,13 @@
       "when": 1776494940667,
       "tag": "0000_flawless_clea",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777027734632,
+      "tag": "0001_wide_longshot",
+      "breakpoints": true
     }
   ]
 }

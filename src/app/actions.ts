@@ -160,11 +160,29 @@ export async function logout() {
 export async function createMeeting(formData: FormData) {
   const title = formData.get("title") as string;
   const groupId = formData.get("groupId") as string;
+  const scheduledStartAtRaw = String(formData.get("scheduledStartAt") ?? "");
+  const scheduledEndAtRaw = String(formData.get("scheduledEndAt") ?? "");
 
   if (!groupId) {
     throw new Error("groupId is missing");
   }
  if (!title) return;
+
+  const scheduledStartAt = new Date(scheduledStartAtRaw);
+  const scheduledEndAt = new Date(scheduledEndAtRaw);
+
+  if (
+    !scheduledStartAtRaw ||
+    !scheduledEndAtRaw ||
+    Number.isNaN(scheduledStartAt.getTime()) ||
+    Number.isNaN(scheduledEndAt.getTime())
+  ) {
+    throw new Error("Valid meeting start and end times are required.");
+  }
+
+  if (scheduledEndAt <= scheduledStartAt) {
+    throw new Error("Meeting end time must be after start time.");
+  }
 
  // 1. Get the User ID from the cookie
   const cookieStore = await cookies();
@@ -180,6 +198,8 @@ export async function createMeeting(formData: FormData) {
     title: title,
     creatorId: userId,
     groupId,
+    scheduledStartAt,
+    scheduledEndAt,
   }).returning();
 
   await db.insert(meetingMembers).values({

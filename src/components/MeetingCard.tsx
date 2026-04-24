@@ -14,6 +14,8 @@ export default function MeetingCard({
     id: string;
     title: string;
     createdAt: Date | string;
+    scheduledStartAt: Date | string | null;
+    scheduledEndAt: Date | string | null;
     stage: "ideation" | "decision" | "summary";
     ideas: { id: string }[];
     members: { userId: string }[];
@@ -22,6 +24,9 @@ export default function MeetingCard({
   isOwner: boolean;
   isAdmin: boolean;
 }) {
+  const scheduledStartAt = meeting.scheduledStartAt;
+  const scheduledEndAt = meeting.scheduledEndAt;
+  const hasSchedule = scheduledStartAt !== null && scheduledEndAt !== null;
   const stageStyles = {
     ideation: "border-emerald-200 bg-emerald-50 text-emerald-800",
     decision: "border-amber-200 bg-amber-50 text-amber-800",
@@ -68,6 +73,22 @@ export default function MeetingCard({
         </div>
 
         <div className="mt-4 flex flex-wrap gap-3 text-xs font-medium text-zinc-500">
+          {hasSchedule && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1">
+              <Calendar size={13} className="text-emerald-600" />
+              {new Date(scheduledStartAt).toLocaleString(undefined, {
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              })}{" "}
+              -{" "}
+              {new Date(scheduledEndAt).toLocaleString(undefined, {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1">
             <Lightbulb size={13} className="text-amber-500" />
             {meeting.ideas.length} {meeting.ideas.length === 1 ? "idea" : "ideas"}

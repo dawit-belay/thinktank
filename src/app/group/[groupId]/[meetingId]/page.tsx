@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { meetings, ideas, groups, groupMembers } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { submitIdea } from "@/app/actions";
 import { cookies } from "next/headers";
@@ -107,6 +107,8 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
             stage={meeting.stage}
             ideaCount={meetingIdeas.length}
             participantCount={members.length}
+            scheduledStartAt={meeting.scheduledStartAt}
+            scheduledEndAt={meeting.scheduledEndAt}
             isOwner={isOwner}
           />
 

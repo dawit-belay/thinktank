@@ -3,6 +3,8 @@ type Props = {
     stage: "ideation" | "decision" | "summary";
     ideaCount: number;
     participantCount: number;
+    scheduledStartAt: Date | string | null;
+    scheduledEndAt: Date | string | null;
     isOwner: boolean;
   };
   
@@ -11,8 +13,11 @@ type Props = {
     stage,
     ideaCount,
     participantCount,
+    scheduledStartAt,
+    scheduledEndAt,
     isOwner,
   }: Props) {
+    const hasSchedule = scheduledStartAt && scheduledEndAt;
     const stagePillStyles = {
       ideation: "bg-emerald-100 text-emerald-800 border-emerald-200",
       decision: "bg-amber-100 text-amber-800 border-amber-200",
@@ -37,6 +42,23 @@ type Props = {
         <p className="mt-2 text-sm text-zinc-600">
           {ideaCount} ideas shared · {participantCount} participants in room
         </p>
+        {hasSchedule && (
+          <p className="mt-1 text-sm font-medium text-zinc-500">
+            Scheduled:{" "}
+            {new Date(scheduledStartAt).toLocaleString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })}{" "}
+            -{" "}
+            {new Date(scheduledEndAt).toLocaleString(undefined, {
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
       </header>
     );
   }

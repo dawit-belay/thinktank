@@ -11,7 +11,6 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-  PlusCircle,
   Shield,
 } from "lucide-react";
 

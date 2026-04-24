@@ -235,7 +235,11 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-24 lg:h-fit">
-            <MeetingParticipantsPanel members={members} />
+            <MeetingParticipantsPanel
+              members={members}
+              meetingId={meetingId}
+              currentUserId={currentUserId}
+            />
 
             {(meeting.stage === "decision" || meeting.stage === "summary") && (
               <DecisionPanel

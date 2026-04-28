@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, primaryKey, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, primaryKey, boolean, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -68,6 +68,21 @@ export const ideas = pgTable("ideas", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// The Notifications Table (in-app alerts for invites etc.)
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  type: text("type").$type<"group_invite" | "meeting_invite">().notNull(),
+  message: text("message").notNull(),
+  link: text("link").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
 
 // The Action Items Table (tasks assigned from meeting decisions)
 export const actionItems = pgTable("action_items", {

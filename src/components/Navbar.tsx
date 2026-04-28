@@ -1,21 +1,44 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import ProfileDropdown from "./ProfileDropdown"
+import { users, notifications } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import ProfileDropdown from "./ProfileDropdown";
+import NotificationBell from "./NotificationBell";
 
 export default async function Navbar() {
-  // 1. Check if the user is logged in via cookies
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
 
-  // 2. Fetch the user's name from Docker if they are logged in
   let user = null;
+  let userNotifications: {
+    id: string;
+    type: "group_invite" | "meeting_invite";
+    message: string;
+    link: string;
+    isRead: boolean;
+    createdAt: string;
+  }[] = [];
+
   if (userId) {
-    user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
+    [user] = await Promise.all([
+      db.query.users.findFirst({ where: eq(users.id, userId) }),
+    ]);
+
+    const rows = await db.query.notifications.findMany({
+      where: eq(notifications.userId, userId),
+      orderBy: [desc(notifications.createdAt)],
+      limit: 20,
     });
+
+    userNotifications = rows.map((n) => ({
+      id: n.id,
+      type: n.type,
+      message: n.message,
+      link: n.link,
+      isRead: n.isRead,
+      createdAt: n.createdAt.toISOString(),
+    }));
   }
 
   return (
@@ -33,7 +56,10 @@ export default async function Navbar() {
 
         <div className="flex items-center gap-2 md:gap-3">
           {user ? (
-            <ProfileDropdown userName={user.name} />
+            <>
+              <NotificationBell initialNotifications={userNotifications} />
+              <ProfileDropdown userName={user.name} />
+            </>
           ) : (
             <>
               <Link

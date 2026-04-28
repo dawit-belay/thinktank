@@ -1,7 +1,8 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments, actionItems } from "@/db/schema";
+import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments, actionItems, notifications } from "@/db/schema";
+import { sendGroupInviteEmail, sendMeetingInviteEmail } from "@/lib/email";
 import { eq, and, or, ilike, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -439,6 +440,27 @@ export async function inviteUserToGroup(
     return { ok: false, error: "Could not add member." };
   }
 
+  const [inviter, group] = await Promise.all([
+    db.query.users.findFirst({ where: eq(users.id, userId) }),
+    db.query.groups.findFirst({ where: eq(groups.id, groupId) }),
+  ]);
+
+  if (inviter && group && target) {
+    await db.insert(notifications).values({
+      userId: targetUserId,
+      type: "group_invite",
+      message: `${inviter.name} invited you to "${group.name}"`,
+      link: `/group/${groupId}`,
+    });
+    void sendGroupInviteEmail({
+      to: target.email,
+      toName: target.name,
+      inviterName: inviter.name,
+      groupName: group.name,
+      groupId,
+    });
+  }
+
   revalidatePath(`/group/${groupId}`);
   return { ok: true };
 }
@@ -610,8 +632,54 @@ export async function inviteUserToMeeting(
     return { ok: false, error: "Could not add user to meeting." };
   }
 
+  const [inviter, meeting] = await Promise.all([
+    db.query.users.findFirst({ where: eq(users.id, userId) }),
+    db.query.meetings.findFirst({ where: eq(meetings.id, meetingId) }),
+  ]);
+
+  if (inviter && meeting && target) {
+    await db.insert(notifications).values({
+      userId: targetUserId,
+      type: "meeting_invite",
+      message: `${inviter.name} added you to "${meeting.title}"`,
+      link: `/group/${groupId}/${meetingId}`,
+    });
+    void sendMeetingInviteEmail({
+      to: target.email,
+      toName: target.name,
+      inviterName: inviter.name,
+      meetingTitle: meeting.title,
+      groupId,
+      meetingId,
+    });
+  }
+
   revalidatePath(`/group/${groupId}/${meetingId}`);
   return { ok: true };
+}
+
+export async function markNotificationRead(
+  notificationId: string
+): Promise<void> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return;
+
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)));
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return;
+
+  await db
+    .update(notifications)
+    .set({ isRead: true })
+    .where(eq(notifications.userId, userId));
 }
 
 export async function updateMeetingStage(

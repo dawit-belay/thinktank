@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp,primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, primaryKey, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -69,6 +69,16 @@ export const ideas = pgTable("ideas", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// The Comments Table (threaded discussion on ideas)
+export const comments = pgTable("comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  authorId: uuid("author_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  content: text("content").notNull(),
+  parentId: uuid("parent_id").references((): AnyPgColumn => comments.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // The NEW Votes Table (The "Junction" Table)
 export const votes = pgTable("votes", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -83,10 +93,22 @@ export const votesRelations = relations(votes, ({ one }) => ({
   idea: one(ideas, { fields: [votes.ideaId], references: [ideas.id] }),
 }));
 
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  author: one(users, { fields: [comments.authorId], references: [users.id] }),
+  idea: one(ideas, { fields: [comments.ideaId], references: [ideas.id] }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+    relationName: "comment_replies",
+  }),
+  replies: many(comments, { relationName: "comment_replies" }),
+}));
+
 export const ideasRelations = relations(ideas, ({ one, many }) => ({
   author: one(users, { fields: [ideas.authorId], references: [users.id] }),
   meeting: one(meetings, {fields: [ideas.meetingId],references: [meetings.id],}),
-  votes: many(votes), // An idea can have many votes
+  votes: many(votes),
+  comments: many(comments),
 }));
 
 

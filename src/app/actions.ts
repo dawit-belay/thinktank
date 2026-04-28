@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers } from "@/db/schema";
+import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments } from "@/db/schema";
 import { eq, and, or, ilike, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -724,6 +724,67 @@ export async function saveMeetingSummary(
     .update(meetings)
     .set({ summary: summary.trim() || null })
     .where(eq(meetings.id, meetingId));
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function submitComment(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
+  const content = String(formData.get("content") ?? "").trim();
+  const ideaId = formData.get("ideaId") as string;
+  const meetingId = formData.get("meetingId") as string;
+  const groupId = formData.get("groupId") as string;
+  const parentId = formData.get("parentId") as string | null;
+
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  if (!userId) return { ok: false, error: "You must be signed in." };
+  if (!content) return { ok: false, error: "Comment cannot be empty." };
+  if (!ideaId || !meetingId) return { ok: false, error: "Invalid request." };
+
+  const membership = await db.query.meetingMembers.findFirst({
+    where: and(eq(meetingMembers.meetingId, meetingId), eq(meetingMembers.userId, userId)),
+  });
+  if (!membership) return { ok: false, error: "You are not a member of this meeting." };
+
+  await db.insert(comments).values({
+    ideaId,
+    authorId: userId,
+    content,
+    parentId: parentId || null,
+  });
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function deleteComment(
+  commentId: string,
+  meetingId: string,
+  groupId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const comment = await db.query.comments.findFirst({
+    where: eq(comments.id, commentId),
+    with: { idea: { with: { meeting: true } } },
+  });
+
+  if (!comment) return { ok: false, error: "Comment not found." };
+
+  const isAuthor = comment.authorId === userId;
+  const isMeetingOwner = comment.idea.meeting.creatorId === userId;
+
+  if (!isAuthor && !isMeetingOwner) {
+    return { ok: false, error: "Unauthorized." };
+  }
+
+  await db.delete(comments).where(eq(comments.id, commentId));
 
   revalidatePath(`/group/${groupId}/${meetingId}`);
   return { ok: true };

@@ -74,6 +74,19 @@ export default function MeetingIdeasRealtime({
           router.refresh();
         }
       );
+
+      channel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments",
+          filter: `idea_id=in.(${ideaIds.join(",")})`,
+        },
+        () => {
+          router.refresh();
+        }
+      );
     }
 
     void channel.subscribe();

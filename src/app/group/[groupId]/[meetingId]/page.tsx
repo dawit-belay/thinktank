@@ -20,6 +20,7 @@ import MeetingStageTabs from "@/components/meeting/MeetingStageTabs";
 import { DecisionPanel } from "@/components/meeting/DecisionPanel";
 import SummaryPanel from "@/components/meeting/SummaryPanel";
 import MeetingIdeasRealtime from "@/components/MeetingIdeasRealtime";
+import CommentSection from "@/components/meeting/CommentSection";
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string, groupId: string}>;
@@ -47,12 +48,16 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
 
   const isOwner = meeting.creatorId === currentUserId;
 
-  // Fetch ideas with Authors AND Votes using Relational Queries
+  // Fetch ideas with Authors, Votes, and Comments using Relational Queries
   const meetingIdeas = await db.query.ideas.findMany({
     where: eq(ideas.meetingId, meetingId),
     with: {
       author: true,
-      votes: true, // This brings in the array of votes for each idea
+      votes: true,
+      comments: {
+        with: { author: true },
+        orderBy: (c, { asc }) => [asc(c.createdAt)],
+      },
     },
     orderBy: (ideas, { desc }) => [desc(ideas.createdAt)],
   });
@@ -227,6 +232,22 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                           groupId={groupId}
                         />
                       </div>
+
+                      <CommentSection
+                        ideaId={idea.id}
+                        meetingId={meetingId}
+                        groupId={groupId}
+                        initialComments={idea.comments.map((c) => ({
+                          id: c.id,
+                          content: c.content,
+                          authorId: c.authorId,
+                          authorName: c.author.name,
+                          parentId: c.parentId,
+                          createdAt: c.createdAt.toISOString(),
+                        }))}
+                        currentUserId={currentUserId}
+                        meetingCreatorId={meeting.creatorId}
+                      />
                     </article>
                   );
                 })}

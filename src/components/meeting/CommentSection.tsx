@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { MessageSquare, Send, CornerDownRight, X } from "lucide-react";
 import { submitComment, deleteComment } from "@/app/actions";
 
@@ -19,6 +19,7 @@ type Props = {
   groupId: string;
   initialComments: CommentData[];
   currentUserId?: string;
+  currentUserName?: string;
   meetingCreatorId: string;
   isAnonymous: boolean;
   meetingStage: "ideation" | "decision" | "summary";
@@ -30,20 +31,26 @@ export default function CommentSection({
   groupId,
   initialComments,
   currentUserId,
+  currentUserName,
   meetingCreatorId,
   isAnonymous,
   meetingStage,
 }: Props) {
   const hideAuthors = isAnonymous && meetingStage === "ideation";
+  const [comments, setComments] = useState(initialComments);
   const [isOpen, setIsOpen] = useState(false);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const mainFormRef = useRef<HTMLFormElement>(null);
   const replyFormRef = useRef<HTMLFormElement>(null);
 
-  const topLevel = initialComments.filter((c) => !c.parentId);
+  useEffect(() => {
+    setComments(initialComments);
+  }, [initialComments]);
+
+  const topLevel = comments.filter((c) => !c.parentId);
   const getReplies = (parentId: string) =>
-    initialComments.filter((c) => c.parentId === parentId);
+    comments.filter((c) => c.parentId === parentId);
 
   function handleSubmit(
     e: React.FormEvent<HTMLFormElement>,
@@ -62,20 +69,31 @@ export default function CommentSection({
     fd.set("groupId", groupId);
     if (parentId) fd.set("parentId", parentId);
 
+    const optimistic: CommentData = {
+      id: `optimistic-${Date.now()}`,
+      content,
+      authorId: currentUserId ?? "",
+      authorName: currentUserName ?? "You",
+      parentId,
+      createdAt: new Date().toISOString(),
+    };
+    setComments((prev) => [...prev, optimistic]);
+    form.reset();
+    if (parentId) setReplyToId(null);
+
     startTransition(async () => {
       await submitComment(fd);
-      form.reset();
-      if (parentId) setReplyToId(null);
     });
   }
 
   function handleDelete(commentId: string) {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
     startTransition(async () => {
       await deleteComment(commentId, meetingId, groupId);
     });
   }
 
-  const count = initialComments.length;
+  const count = comments.length;
 
   return (
     <div className="mt-3 border-t border-zinc-100 pt-3">

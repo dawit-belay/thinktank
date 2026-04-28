@@ -25,7 +25,7 @@ import ActionItemsPanel from "@/components/meeting/ActionItemsPanel";
 import TemplateGuidePanel from "@/components/meeting/TemplateGuidePanel";
 import ReactionPicker from "@/components/meeting/ReactionPicker";
 import { type TemplateType } from "@/lib/templates";
-import { REACTION_EMOJIS } from "@/app/actions";
+import { REACTION_EMOJIS } from "@/lib/reactions";
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string, groupId: string}>;
@@ -52,6 +52,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
   if (!meeting) notFound();
 
   const isOwner = meeting.creatorId === currentUserId;
+  const currentUserName = members.find((m) => m.userId === currentUserId)?.user.name;
   const ideasWindowClosed =
     meeting.stage === "ideation" &&
     !!meeting.ideasDueBy &&
@@ -302,6 +303,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                           createdAt: c.createdAt.toISOString(),
                         }))}
                         currentUserId={currentUserId}
+                        currentUserName={currentUserName}
                         meetingCreatorId={meeting.creatorId}
                         isAnonymous={meeting.isAnonymous}
                         meetingStage={meeting.stage}

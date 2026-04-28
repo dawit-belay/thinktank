@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { CheckSquare, Square, Trash2, Plus, X, CalendarDays, ListChecks } from "lucide-react";
 import { createActionItem, deleteActionItem, toggleActionItemStatus } from "@/app/actions";
 
@@ -35,10 +35,15 @@ export default function ActionItemsPanel({
   currentUserId,
   canManage,
 }: Props) {
+  const [localItems, setLocalItems] = useState(initialItems);
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const doneCount = initialItems.filter((i) => i.status === "done").length;
+  useEffect(() => {
+    setLocalItems(initialItems);
+  }, [initialItems]);
+
+  const doneCount = localItems.filter((i) => i.status === "done").length;
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -46,22 +51,40 @@ export default function ActionItemsPanel({
     fd.set("meetingId", meetingId);
     fd.set("groupId", groupId);
     const form = e.currentTarget;
+
+    const assigneeId = fd.get("assigneeId") as string;
+    const assigneeName = members.find((m) => m.userId === assigneeId)?.userName ?? "";
+    const dueDateRaw = fd.get("dueDate") as string;
+    const optimistic: ActionItemData = {
+      id: `optimistic-${Date.now()}`,
+      content: fd.get("content") as string,
+      status: "open",
+      assigneeId,
+      assigneeName,
+      dueDate: dueDateRaw ? new Date(dueDateRaw).toISOString() : null,
+    };
+    setLocalItems((prev) => [...prev, optimistic]);
+    form.reset();
+    setShowForm(false);
+
     startTransition(async () => {
-      const res = await createActionItem(fd);
-      if (res.ok) {
-        form.reset();
-        setShowForm(false);
-      }
+      await createActionItem(fd);
     });
   }
 
   function handleToggle(itemId: string) {
+    setLocalItems((prev) =>
+      prev.map((i) =>
+        i.id === itemId ? { ...i, status: i.status === "done" ? "open" : "done" } : i
+      )
+    );
     startTransition(async () => {
       await toggleActionItemStatus(itemId, meetingId, groupId);
     });
   }
 
   function handleDelete(itemId: string) {
+    setLocalItems((prev) => prev.filter((i) => i.id !== itemId));
     startTransition(async () => {
       await deleteActionItem(itemId, meetingId, groupId);
     });
@@ -80,9 +103,9 @@ export default function ActionItemsPanel({
         <div className="flex items-center gap-2">
           <ListChecks size={16} className="text-emerald-600" />
           <h3 className="font-bold text-zinc-900">Action Items</h3>
-          {initialItems.length > 0 && (
+          {localItems.length > 0 && (
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-semibold text-zinc-500">
-              {doneCount}/{initialItems.length}
+              {doneCount}/{localItems.length}
             </span>
           )}
         </div>
@@ -97,15 +120,15 @@ export default function ActionItemsPanel({
         )}
       </div>
 
-      {initialItems.length === 0 && !showForm && (
+      {localItems.length === 0 && !showForm && (
         <p className="mt-3 text-xs text-zinc-400">
           No action items yet.{canManage ? " Add one to track who does what." : ""}
         </p>
       )}
 
-      {initialItems.length > 0 && (
+      {localItems.length > 0 && (
         <ul className="mt-3 space-y-2">
-          {initialItems.map((item) => {
+          {localItems.map((item) => {
             const canToggle = item.assigneeId === currentUserId || canManage;
             const canDelete = canManage;
             const overdue = item.status === "open" && item.dueDate && isPast(item.dueDate);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
-import { toggleReaction, REACTION_EMOJIS } from "@/app/actions";
+import { useState, useTransition, useEffect } from "react";
+import { toggleReaction } from "@/app/actions";
 
 export type ReactionSummary = {
   emoji: string;
@@ -25,10 +25,22 @@ export default function ReactionPicker({
   reactions,
   currentUserId,
 }: Props) {
+  const [localReactions, setLocalReactions] = useState(reactions);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setLocalReactions(reactions);
+  }, [reactions]);
 
   function handleToggle(emoji: string) {
     if (!currentUserId) return;
+    setLocalReactions((prev) =>
+      prev.map((r) => {
+        if (r.emoji !== emoji) return r;
+        const next = !r.hasReacted;
+        return { ...r, hasReacted: next, count: next ? r.count + 1 : r.count - 1 };
+      })
+    );
     startTransition(async () => {
       await toggleReaction(ideaId, emoji, meetingId, groupId);
     });
@@ -36,7 +48,7 @@ export default function ReactionPicker({
 
   return (
     <div className="mt-2 flex flex-wrap gap-1.5 border-t border-zinc-100 pt-2.5">
-      {reactions.map(({ emoji, label, count, hasReacted }) => (
+      {localReactions.map(({ emoji, label, count, hasReacted }) => (
         <button
           key={emoji}
           onClick={() => handleToggle(emoji)}

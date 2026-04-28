@@ -136,18 +136,23 @@ export async function submitIdea(formData: FormData) {
   const meetingId = formData.get("meetingId") as string;
   const groupId = formData.get("groupId") as string;
 
-  // 1. Get the User ID
   const cookieStore = await cookies();
   const userId = cookieStore.get("user_id")?.value;
 
-  if (!content || !meetingId|| !userId) return;
+  if (!content || !meetingId || !userId) return;
+
+  const meeting = await db.query.meetings.findFirst({
+    where: eq(meetings.id, meetingId),
+  });
+
+  if (meeting?.ideasDueBy && new Date() > meeting.ideasDueBy) return;
 
   await db.insert(ideas).values({
     content: content,
     meetingId: meetingId,
     authorId: userId,
   });
-  revalidatePath(`/group/${groupId}/${meetingId}`); 
+  revalidatePath(`/group/${groupId}/${meetingId}`);
 }
  
 
@@ -166,6 +171,8 @@ export async function createMeeting(formData: FormData) {
   const isAnonymous = formData.get("isAnonymous") === "on";
   const templateTypeRaw = formData.get("templateType") as string | null;
   const templateType = templateTypeRaw || null;
+  const ideasDueByRaw = String(formData.get("ideasDueBy") ?? "");
+  const ideasDueBy = ideasDueByRaw ? new Date(ideasDueByRaw) : null;
 
   if (!groupId) {
     throw new Error("groupId is missing");
@@ -206,6 +213,7 @@ export async function createMeeting(formData: FormData) {
     scheduledEndAt,
     isAnonymous,
     templateType: templateType as "retrospective" | "okr_planning" | "standup" | "decision_log" | null,
+    ideasDueBy: ideasDueBy && !isNaN(ideasDueBy.getTime()) ? ideasDueBy : null,
   }).returning();
 
   await db.insert(meetingMembers).values({

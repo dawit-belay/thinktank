@@ -7,6 +7,8 @@ type Props = {
     scheduledEndAt: Date | string | null;
     isOwner: boolean;
     isAnonymous: boolean;
+    ideasDueBy: Date | string | null;
+    ideasWindowClosed: boolean;
   };
 
   export default function MeetingHeader({
@@ -18,6 +20,8 @@ type Props = {
     scheduledEndAt,
     isOwner,
     isAnonymous,
+    ideasDueBy,
+    ideasWindowClosed,
   }: Props) {
     const hasSchedule = scheduledStartAt && scheduledEndAt;
     const stagePillStyles = {
@@ -42,6 +46,11 @@ type Props = {
               Anonymous
             </span>
           )}
+          {ideasDueBy && ideasWindowClosed && (
+            <span className="rounded-full border border-red-200 bg-red-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-red-700">
+              Window Closed
+            </span>
+          )}
         </div>
         <h1 className="text-balance text-3xl font-black tracking-tight text-zinc-900 md:text-4xl">
           {title}
@@ -61,6 +70,18 @@ type Props = {
             })}{" "}
             -{" "}
             {new Date(scheduledEndAt).toLocaleString(undefined, {
+              hour: "numeric",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
+        {ideasDueBy && (
+          <p className={`mt-1 text-sm font-medium ${ideasWindowClosed ? "text-red-500" : "text-sky-600"}`}>
+            {ideasWindowClosed ? "Ideas window closed" : "Ideas due by"}{" "}
+            {new Date(ideasDueBy).toLocaleString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
               hour: "numeric",
               minute: "2-digit",
             })}

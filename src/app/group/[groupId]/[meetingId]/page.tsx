@@ -50,6 +50,10 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
   if (!meeting) notFound();
 
   const isOwner = meeting.creatorId === currentUserId;
+  const ideasWindowClosed =
+    meeting.stage === "ideation" &&
+    !!meeting.ideasDueBy &&
+    new Date() > meeting.ideasDueBy;
 
   // Fetch ideas with Authors, Votes, and Comments using Relational Queries
   const meetingIdeas = await db.query.ideas.findMany({
@@ -125,6 +129,8 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
             scheduledEndAt={meeting.scheduledEndAt}
             isOwner={isOwner}
             isAnonymous={meeting.isAnonymous}
+            ideasDueBy={meeting.ideasDueBy}
+            ideasWindowClosed={ideasWindowClosed}
           />
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-4">
@@ -163,33 +169,47 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
               />
             )}
 
-            <section className="mb-6 rounded-2xl border border-zinc-200/90 bg-white/90 p-4 shadow-sm shadow-zinc-200/40 md:p-5">
-              <form action={submitIdea} className="flex flex-col gap-3 sm:flex-row">
-                <input type="hidden" name="meetingId" value={meetingId} />
-                <input type="hidden" name="groupId" value={groupId} />
-
-                <div className="relative flex-1">
-                  <Lightbulb
-                    size={18}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-amber-500"
-                  />
-                  <input
-                    name="content"
-                    placeholder="Type a new idea..."
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 py-3 pl-10 pr-3 text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
-                    required
-                  />
+            {ideasWindowClosed ? (
+              <section className="mb-6 rounded-2xl border border-red-100 bg-red-50/60 p-4 md:p-5">
+                <div className="flex items-start gap-3">
+                  <Lightbulb size={18} className="mt-0.5 shrink-0 text-red-400" />
+                  <div>
+                    <p className="font-semibold text-red-800">Ideas window is closed</p>
+                    <p className="mt-0.5 text-sm text-red-600">
+                      The deadline for submitting ideas has passed. The meeting owner can now advance to the decision stage.
+                    </p>
+                  </div>
                 </div>
+              </section>
+            ) : (
+              <section className="mb-6 rounded-2xl border border-zinc-200/90 bg-white/90 p-4 shadow-sm shadow-zinc-200/40 md:p-5">
+                <form action={submitIdea} className="flex flex-col gap-3 sm:flex-row">
+                  <input type="hidden" name="meetingId" value={meetingId} />
+                  <input type="hidden" name="groupId" value={groupId} />
 
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/20 transition hover:bg-emerald-600"
-                >
-                  <PlusCircle size={16} />
-                  Add Idea
-                </button>
-              </form>
-            </section>
+                  <div className="relative flex-1">
+                    <Lightbulb
+                      size={18}
+                      className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-amber-500"
+                    />
+                    <input
+                      name="content"
+                      placeholder="Type a new idea..."
+                      className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 py-3 pl-10 pr-3 text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm shadow-emerald-500/20 transition hover:bg-emerald-600"
+                  >
+                    <PlusCircle size={16} />
+                    Add Idea
+                  </button>
+                </form>
+              </section>
+            )}
 
             <section>
               <div className="mb-4 flex items-center gap-2 text-zinc-700">

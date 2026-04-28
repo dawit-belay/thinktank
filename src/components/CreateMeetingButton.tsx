@@ -198,6 +198,21 @@ export default function CreateMeetingButton({ groupId, className }: Props) {
                 </div>
               </div>
 
+              <div>
+                  <label htmlFor="ideas-due-by" className="mb-2 block text-sm font-semibold text-zinc-700">
+                    Ideas deadline <span className="font-normal text-zinc-400">(optional)</span>
+                  </label>
+                  <input
+                    id="ideas-due-by"
+                    name="ideasDueBy"
+                    type="datetime-local"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                  <p className="mt-1.5 text-xs text-zinc-400">
+                    After this time, no new ideas can be submitted — even async participants.
+                  </p>
+                </div>
+
               <label className="mt-4 flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/70 px-4 py-3 transition hover:bg-zinc-100/60">
                 <div className="flex items-center gap-2.5">
                   <EyeOff size={15} className={isAnonymous ? "text-violet-600" : "text-zinc-400"} />

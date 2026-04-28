@@ -49,6 +49,7 @@ export const meetings = pgTable("meetings", {
   closedAt: timestamp("closed_at"),
   isAnonymous: boolean("is_anonymous").default(false).notNull(),
   templateType: text("template_type").$type<"retrospective" | "okr_planning" | "standup" | "decision_log">(),
+  ideasDueBy: timestamp("ideas_due_by"),
 });
 
 // The Members Table (The link between Users and meetings)

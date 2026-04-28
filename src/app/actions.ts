@@ -3,7 +3,7 @@
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
 import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments, actionItems, notifications } from "@/db/schema";
 import { sendGroupInviteEmail, sendMeetingInviteEmail } from "@/lib/email";
-import { eq, and, or, ilike, notInArray } from "drizzle-orm";
+import { eq, and, or, ilike, notInArray, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
@@ -949,4 +949,78 @@ export async function toggleActionItemStatus(
 
   revalidatePath(`/group/${groupId}/${meetingId}`);
   return { ok: true };
+}
+
+export type SearchResults = {
+  ideas: Array<{
+    id: string;
+    content: string;
+    meetingId: string;
+    meetingTitle: string;
+    groupId: string;
+  }>;
+  meetings: Array<{
+    id: string;
+    title: string;
+    groupId: string;
+    stage: string;
+    snippet: string | null;
+  }>;
+};
+
+export async function globalSearch(query: string): Promise<SearchResults> {
+  const empty: SearchResults = { ideas: [], meetings: [] };
+
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return empty;
+
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return empty;
+
+  const pattern = `%${trimmed}%`;
+
+  const memberRows = await db
+    .select({ meetingId: meetingMembers.meetingId })
+    .from(meetingMembers)
+    .where(eq(meetingMembers.userId, userId));
+
+  const accessibleIds = memberRows.map((r) => r.meetingId);
+  if (accessibleIds.length === 0) return empty;
+
+  const [ideaRows, meetingRows] = await Promise.all([
+    db.query.ideas.findMany({
+      where: and(ilike(ideas.content, pattern), inArray(ideas.meetingId, accessibleIds)),
+      with: { meeting: true },
+      limit: 8,
+    }),
+    db.query.meetings.findMany({
+      where: and(
+        inArray(meetings.id, accessibleIds),
+        or(
+          ilike(meetings.title, pattern),
+          ilike(meetings.decisionText, pattern),
+          ilike(meetings.summary, pattern),
+        )
+      ),
+      limit: 8,
+    }),
+  ]);
+
+  return {
+    ideas: ideaRows.map((i) => ({
+      id: i.id,
+      content: i.content,
+      meetingId: i.meetingId,
+      meetingTitle: i.meeting.title,
+      groupId: i.meeting.groupId,
+    })),
+    meetings: meetingRows.map((m) => ({
+      id: m.id,
+      title: m.title,
+      groupId: m.groupId,
+      stage: m.stage,
+      snippet: m.decisionText ?? m.summary ?? null,
+    })),
+  };
 }

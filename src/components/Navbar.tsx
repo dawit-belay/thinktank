@@ -5,6 +5,7 @@ import { users, notifications } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import ProfileDropdown from "./ProfileDropdown";
 import NotificationBell from "./NotificationBell";
+import SearchBar from "./SearchBar";
 
 export default async function Navbar() {
   const cookieStore = await cookies();
@@ -57,6 +58,7 @@ export default async function Navbar() {
         <div className="flex items-center gap-2 md:gap-3">
           {user ? (
             <>
+              <SearchBar />
               <NotificationBell initialNotifications={userNotifications} />
               <ProfileDropdown userName={user.name} />
             </>

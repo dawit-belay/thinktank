@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments, actionItems, notifications } from "@/db/schema";
+import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments, actionItems, notifications, reactions } from "@/db/schema";
 import { sendGroupInviteEmail, sendMeetingInviteEmail } from "@/lib/email";
 import { eq, and, or, ilike, notInArray, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -1023,4 +1023,40 @@ export async function globalSearch(query: string): Promise<SearchResults> {
       snippet: m.decisionText ?? m.summary ?? null,
     })),
   };
+}
+
+export const REACTION_EMOJIS = [
+  { emoji: "👍", label: "Agree" },
+  { emoji: "💡", label: "Interesting" },
+  { emoji: "❓", label: "Needs clarification" },
+  { emoji: "⚠️", label: "Concern" },
+  { emoji: "🔁", label: "Already tried" },
+] as const;
+
+export async function toggleReaction(
+  ideaId: string,
+  emoji: string,
+  meetingId: string,
+  groupId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const existing = await db.query.reactions.findFirst({
+    where: and(
+      eq(reactions.userId, userId),
+      eq(reactions.ideaId, ideaId),
+      eq(reactions.emoji, emoji)
+    ),
+  });
+
+  if (existing) {
+    await db.delete(reactions).where(eq(reactions.id, existing.id));
+  } else {
+    await db.insert(reactions).values({ userId, ideaId, emoji });
+  }
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
 }

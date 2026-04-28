@@ -23,7 +23,9 @@ import MeetingIdeasRealtime from "@/components/MeetingIdeasRealtime";
 import CommentSection from "@/components/meeting/CommentSection";
 import ActionItemsPanel from "@/components/meeting/ActionItemsPanel";
 import TemplateGuidePanel from "@/components/meeting/TemplateGuidePanel";
+import ReactionPicker from "@/components/meeting/ReactionPicker";
 import { type TemplateType } from "@/lib/templates";
+import { REACTION_EMOJIS } from "@/app/actions";
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string, groupId: string}>;
@@ -61,6 +63,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
     with: {
       author: true,
       votes: true,
+      reactions: true,
       comments: {
         with: { author: true },
         orderBy: (c, { asc }) => [asc(c.createdAt)],
@@ -270,6 +273,21 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                           groupId={groupId}
                         />
                       </div>
+
+                      <ReactionPicker
+                        ideaId={idea.id}
+                        meetingId={meetingId}
+                        groupId={groupId}
+                        currentUserId={currentUserId}
+                        reactions={REACTION_EMOJIS.map(({ emoji, label }) => ({
+                          emoji,
+                          label,
+                          count: idea.reactions.filter((r) => r.emoji === emoji).length,
+                          hasReacted: idea.reactions.some(
+                            (r) => r.emoji === emoji && r.userId === currentUserId
+                          ),
+                        }))}
+                      />
 
                       <CommentSection
                         ideaId={idea.id}

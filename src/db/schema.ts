@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, primaryKey, boolean, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, primaryKey, boolean, uniqueIndex, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
@@ -99,6 +99,22 @@ export const actionItems = pgTable("action_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// The Reactions Table (emoji reactions on ideas)
+export const reactions = pgTable("reactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  ideaId: uuid("idea_id").references(() => ideas.id, { onDelete: "cascade" }).notNull(),
+  emoji: text("emoji").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (t) => ({
+  uniqueUserIdeaEmoji: uniqueIndex("reactions_user_idea_emoji").on(t.userId, t.ideaId, t.emoji),
+}));
+
+export const reactionsRelations = relations(reactions, ({ one }) => ({
+  user: one(users, { fields: [reactions.userId], references: [users.id] }),
+  idea: one(ideas, { fields: [reactions.ideaId], references: [ideas.id] }),
+}));
+
 // The Comments Table (threaded discussion on ideas)
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -145,6 +161,7 @@ export const ideasRelations = relations(ideas, ({ one, many }) => ({
   meeting: one(meetings, {fields: [ideas.meetingId],references: [meetings.id],}),
   votes: many(votes),
   comments: many(comments),
+  reactions: many(reactions),
 }));
 
 

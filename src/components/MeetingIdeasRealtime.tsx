@@ -42,8 +42,10 @@ export default function MeetingIdeasRealtime({
     channel.on("postgres_changes", { event: "*", schema: "public", table: "action_items", filter: `meeting_id=eq.${meetingId}` }, () => router.refresh());
 
     if (voteFilter) {
+      const ideaFilter = `idea_id=in.(${ideaIds.join(",")})`;
       channel.on("postgres_changes", { event: "*", schema: "public", table: "votes", filter: voteFilter }, () => router.refresh());
-      channel.on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `idea_id=in.(${ideaIds.join(",")})` }, () => router.refresh());
+      channel.on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: ideaFilter }, () => router.refresh());
+      channel.on("postgres_changes", { event: "*", schema: "public", table: "reactions", filter: ideaFilter }, () => router.refresh());
     }
 
     void channel.subscribe();

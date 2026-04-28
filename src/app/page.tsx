@@ -9,7 +9,72 @@ import {
   Sparkles,
   Users,
   Vote,
+  CheckSquare,
 } from "lucide-react";
+import LiveDemoCard from "@/components/home/LiveDemoCard";
+
+const FEATURES = [
+  {
+    icon: MessageSquare,
+    iconClass: "bg-blue-100 text-blue-700",
+    hoverBorder: "hover:border-blue-200",
+    title: "Text-first rooms",
+    body: "No camera fatigue. Post ideas when you're ready; read and reply on your own schedule.",
+  },
+  {
+    icon: Users,
+    iconClass: "bg-violet-100 text-violet-700",
+    hoverBorder: "hover:border-violet-200",
+    title: "Room for every voice",
+    body: "Quieter teammates get equal space. Ideas stand on their merit, not who spoke loudest.",
+  },
+  {
+    icon: Vote,
+    iconClass: "bg-emerald-100 text-emerald-700",
+    hoverBorder: "hover:border-emerald-200",
+    title: "Vote & align",
+    body: "Upvote the ideas the group should pursue — a clear signal before locking in a decision.",
+  },
+  {
+    icon: CheckSquare,
+    iconClass: "bg-amber-100 text-amber-700",
+    hoverBorder: "hover:border-amber-200",
+    title: "Track action items",
+    body: "Assign tasks from each meeting with due dates and status tracking so nothing falls through.",
+  },
+];
+
+const STEPS = [
+  {
+    n: "01",
+    title: "Create a room",
+    body: "Start a meeting from your group. Pick a template or go blank.",
+  },
+  {
+    n: "02",
+    title: "Share ideas",
+    body: "Everyone posts ideas as short text — easy to read, quote, and build on.",
+  },
+  {
+    n: "03",
+    title: "Vote & react",
+    body: "Upvotes and emoji reactions surface what the team actually cares about.",
+  },
+  {
+    n: "04",
+    title: "Decide & track",
+    body: "Record the decision, write a summary, and assign follow-up action items.",
+  },
+];
+
+const FEATURE_TAGS = [
+  "Threaded comments",
+  "Emoji reactions",
+  "Action items",
+  "Anonymous mode",
+  "Meeting templates",
+  "Decision archive",
+];
 
 export default async function Home() {
   const cookieStore = await cookies();
@@ -23,200 +88,215 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-zinc-50 via-white to-blue-50/40 text-zinc-900">
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-10 md:px-8 md:pt-16">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-3xl border border-zinc-200/80 bg-white/80 p-8 shadow-sm shadow-zinc-200/50 backdrop-blur-sm md:p-12 lg:p-14">
+    <main className="min-h-[calc(100vh-4rem)] text-zinc-900">
+      {/* ── Hero ──────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-zinc-50 via-emerald-50/50 to-violet-50/25 px-5 pb-24 pt-16 md:px-10 md:pt-24">
+        {/* Animated background blobs */}
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div
-            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-blue-400/15 blur-3xl"
-            aria-hidden
+            className="absolute -left-40 -top-10 h-[32rem] w-[32rem] rounded-full bg-emerald-300/20 blur-3xl"
+            style={{ animation: "blob 9s ease-in-out infinite" }}
           />
           <div
-            className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-violet-400/10 blur-3xl"
-            aria-hidden
+            className="absolute right-0 top-16 h-[26rem] w-[26rem] rounded-full bg-violet-300/15 blur-3xl"
+            style={{ animation: "blob 11s ease-in-out infinite 2s" }}
           />
+          <div
+            className="absolute bottom-0 left-1/3 h-[20rem] w-[20rem] rounded-full bg-blue-300/10 blur-3xl"
+            style={{ animation: "blob 13s ease-in-out infinite 4s" }}
+          />
+        </div>
 
-          <div className="relative">
-            <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/80 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-700">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden />
-              Text-first brainstorming
-            </p>
-
-            <h1 className="max-w-3xl text-4xl font-black tracking-tight text-zinc-900 md:text-5xl lg:text-6xl">
-              Thinktank
-            </h1>
-            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-zinc-600 md:text-xl">
-              Replace noisy video calls with a calm, async room where everyone can
-              contribute ideas, vote on what matters, and move toward better
-              decisions—without talking over each other.
-            </p>
-
-            {currentUser ? (
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-                <p className="text-zinc-700">
-                  Welcome back,{" "}
-                  <span className="font-semibold text-zinc-900">
-                    {currentUser.name}
-                  </span>
-                  .
-                </p>
-                <Link
-                  href="/group"
-                  className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500"
-                >
-                  Open group rooms
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
+        <div className="relative mx-auto max-w-6xl">
+          <div className="grid items-center gap-14 lg:grid-cols-2">
+            {/* Left — copy */}
+            <div style={{ animation: "fade-up 0.6s ease-out forwards" }}>
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50/80 px-3.5 py-1.5 text-xs font-semibold text-emerald-700">
+                <Sparkles className="h-3.5 w-3.5" aria-hidden />
+                Text-first · Async · Real-time
               </div>
+
+              <h1 className="text-5xl font-black leading-[1.07] tracking-tight text-zinc-900 md:text-[3.5rem] lg:text-[4rem]">
+                Think together.{" "}
+                <span className="text-emerald-600">Decide faster.</span>
+              </h1>
+
+              <p className="mt-5 max-w-xl text-lg leading-relaxed text-zinc-600">
+                Replace noisy video calls with a calm, async room where everyone
+                can contribute ideas, vote on what matters, and reach better
+                decisions — without talking over each other.
+              </p>
+
+              {currentUser ? (
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <p className="text-zinc-600">
+                    Welcome back,{" "}
+                    <span className="font-bold text-zinc-900">
+                      {currentUser.name}
+                    </span>
+                    .
+                  </p>
+                  <Link
+                    href="/group"
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-emerald-500/30"
+                  >
+                    Open group rooms
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/25 transition hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-emerald-500/30"
+                  >
+                    Get started free
+                    <ArrowRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white/80 px-6 py-3 text-sm font-semibold text-zinc-700 backdrop-blur-sm transition hover:border-zinc-400 hover:bg-zinc-50"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
+
+              {/* Feature tags */}
+              <div className="mt-8 flex flex-wrap gap-2">
+                {FEATURE_TAGS.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-full border border-zinc-200/80 bg-white/70 px-3 py-1 text-xs font-medium text-zinc-500 backdrop-blur-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Right — live demo */}
+            <div
+              className="flex justify-center lg:justify-end"
+              style={{ animation: "fade-up 0.6s ease-out 0.15s both" }}
+            >
+              <div className="w-full max-w-sm">
+                <LiveDemoCard />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features ──────────────────────────────────────────── */}
+      <section className="bg-white px-5 py-16 md:px-10 md:py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-black tracking-tight text-zinc-900 md:text-4xl">
+              Built for clarity, not calendar blocks
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-zinc-500">
+              Async text rooms give people time to think, edit, and build on
+              each other&apos;s ideas — then votes surface what the group
+              actually wants to pursue.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map(({ icon: Icon, iconClass, hoverBorder, title, body }) => (
+              <div
+                key={title}
+                className={`group rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${hoverBorder}`}
+              >
+                <div
+                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${iconClass}`}
+                >
+                  <Icon className="h-5 w-5" aria-hidden />
+                </div>
+                <h3 className="mt-4 font-bold text-zinc-900">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-500">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── How it works ──────────────────────────────────────── */}
+      <section className="bg-zinc-50/80 px-5 py-16 md:px-10 md:py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-black tracking-tight text-zinc-900 md:text-4xl">
+              How a session flows
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-zinc-500">
+              From idea dump to signed-off decision — four stages, zero scheduling loops.
+            </p>
+          </div>
+
+          <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+            {STEPS.map((step, i) => (
+              <div key={step.n} className="relative flex flex-col">
+                {i < STEPS.length - 1 && (
+                  <div className="absolute left-[2.6rem] top-5 hidden h-px w-[calc(100%+2.5rem)] bg-gradient-to-r from-zinc-300 to-transparent md:block" />
+                )}
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-black text-white shadow-md shadow-emerald-600/30">
+                  {step.n}
+                </div>
+                <h3 className="mt-4 font-bold text-zinc-900">{step.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-zinc-500">
+                  {step.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ───────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700 px-5 py-16 text-center md:px-10 md:py-20">
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-20 left-16 h-56 w-56 rounded-full bg-emerald-900/25 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-2xl">
+          <h2 className="text-3xl font-black tracking-tight text-white md:text-4xl">
+            Ready to replace your next video call?
+          </h2>
+          <p className="mt-4 text-emerald-100">
+            Start a room, invite your team, and see how much clearer decisions
+            can be.
+          </p>
+
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            {currentUser ? (
+              <Link
+                href="/group"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-bold text-emerald-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-emerald-50"
+              >
+                Open group rooms
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </Link>
             ) : (
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <>
                 <Link
                   href="/signup"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-500"
+                  className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3 text-sm font-bold text-emerald-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-emerald-50"
                 >
                   Create an account
                   <ArrowRight className="h-4 w-4" aria-hidden />
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-3 text-sm font-semibold text-zinc-800 transition hover:border-zinc-400 hover:bg-zinc-50"
+                  className="inline-flex items-center justify-center rounded-xl border border-emerald-400/60 px-7 py-3 text-sm font-semibold text-white transition hover:border-white hover:bg-emerald-600/50"
                 >
                   Sign in
-                </Link>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Why Thinktank */}
-        <section className="mt-14 md:mt-20">
-          <h2 className="text-center text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">
-            Built for clarity, not calendar blocks
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-center text-zinc-600">
-            Async text rooms give people time to think, edit, and build on each
-            other&apos;s ideas—then use votes to surface what the group actually
-            wants to pursue.
-          </p>
-
-          <ul className="mt-10 grid gap-6 md:grid-cols-3">
-            <li className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                <MessageSquare className="h-5 w-5" aria-hidden />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-zinc-900">
-                Text-first rooms
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                No camera fatigue. Post ideas when you&apos;re ready; read and
-                reply on your own schedule.
-              </p>
-            </li>
-            <li className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-violet-200 hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-700">
-                <Users className="h-5 w-5" aria-hidden />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-zinc-900">
-                Room for every voice
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                Quieter teammates get equal space. Ideas stand on their merit,
-                not who spoke loudest in the call.
-              </p>
-            </li>
-            <li className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-emerald-200 hover:shadow-md">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                <Vote className="h-5 w-5" aria-hidden />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-zinc-900">
-                Vote & align
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                Upvote ideas the group should prioritize— a simple signal before
-                you lock in a decision.
-              </p>
-            </li>
-          </ul>
-        </section>
-
-        {/* How it works */}
-        <section className="mt-16 rounded-3xl border border-zinc-200 bg-zinc-50/80 p-8 md:mt-20 md:p-10">
-          <h2 className="text-xl font-bold text-zinc-900 md:text-2xl">
-            How a session flows
-          </h2>
-          <ol className="mt-8 space-y-6">
-            {[
-              {
-                step: "1",
-                title: "Create or join a room",
-                body: "Start a meeting from your dashboard or open an existing room from the list.",
-              },
-              {
-                step: "2",
-                title: "Share ideas in writing",
-                body: "Everyone adds ideas as short posts—easy to scan, quote, and build on.",
-              },
-              {
-                step: "3",
-                title: "Vote and decide",
-                body: "Use votes to highlight strong options; the host can steer toward a clear next step.",
-              },
-            ].map((item) => (
-              <li key={item.step} className="flex gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-                  {item.step}
-                </span>
-                <div>
-                  <h3 className="font-semibold text-zinc-900">{item.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-                    {item.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* Bottom CTA + links */}
-        <section className="mt-14 text-center md:mt-16">
-          <p className="text-sm font-medium text-zinc-500">
-            Quick links
-          </p>
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-sm">
-            {currentUser ? (
-              <Link
-                href="/group"
-                className="font-semibold text-blue-600 underline-offset-4 hover:underline"
-              >
-                group rooms
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="font-semibold text-blue-600 underline-offset-4 hover:underline"
-                >
-                  Log in
-                </Link>
-                <span className="text-zinc-300" aria-hidden>
-                  ·
-                </span>
-                <Link
-                  href="/signup"
-                  className="text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline"
-                >
-                  Sign up
                 </Link>
               </>
             )}
           </div>
-          <p className="mx-auto mt-10 max-w-md text-xs leading-relaxed text-zinc-400">
-            Thinktank is under active development. Summaries, meeting phases, and
-            richer collaboration are planned—this page is your home base to jump
-            into rooms.
-          </p>
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }

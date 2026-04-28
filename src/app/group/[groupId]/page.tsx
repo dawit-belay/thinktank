@@ -12,6 +12,7 @@ import {
   TrendingUp,
   Users,
   Shield,
+  BookMarked,
 } from "lucide-react";
 
 import MeetingCard from "@/components/MeetingCard";
@@ -266,6 +267,13 @@ export default async function GroupPage({ params }: GroupPageProps) {
                 Open a room to capture ideas and vote as a team.
               </p>
             </div>
+            <Link
+              href={`/group/${groupId}/decisions`}
+              className="inline-flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3.5 py-2 text-sm font-semibold text-violet-700 shadow-sm transition hover:bg-violet-100"
+            >
+              <BookMarked size={15} />
+              Decision Archive
+            </Link>
           </div>
 
           {allMeetings.length > 0 ? (

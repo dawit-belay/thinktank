@@ -22,6 +22,8 @@ import SummaryPanel from "@/components/meeting/SummaryPanel";
 import MeetingIdeasRealtime from "@/components/MeetingIdeasRealtime";
 import CommentSection from "@/components/meeting/CommentSection";
 import ActionItemsPanel from "@/components/meeting/ActionItemsPanel";
+import TemplateGuidePanel from "@/components/meeting/TemplateGuidePanel";
+import { type TemplateType } from "@/lib/templates";
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string, groupId: string}>;
@@ -154,6 +156,13 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
 
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_19rem]">
           <div>
+            {meeting.templateType && (
+              <TemplateGuidePanel
+                templateType={meeting.templateType as TemplateType}
+                stage={meeting.stage}
+              />
+            )}
+
             <section className="mb-6 rounded-2xl border border-zinc-200/90 bg-white/90 p-4 shadow-sm shadow-zinc-200/40 md:p-5">
               <form action={submitIdea} className="flex flex-col gap-3 sm:flex-row">
                 <input type="hidden" name="meetingId" value={meetingId} />

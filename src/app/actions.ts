@@ -164,6 +164,8 @@ export async function createMeeting(formData: FormData) {
   const scheduledStartAtRaw = String(formData.get("scheduledStartAt") ?? "");
   const scheduledEndAtRaw = String(formData.get("scheduledEndAt") ?? "");
   const isAnonymous = formData.get("isAnonymous") === "on";
+  const templateTypeRaw = formData.get("templateType") as string | null;
+  const templateType = templateTypeRaw || null;
 
   if (!groupId) {
     throw new Error("groupId is missing");
@@ -203,6 +205,7 @@ export async function createMeeting(formData: FormData) {
     scheduledStartAt,
     scheduledEndAt,
     isAnonymous,
+    templateType: templateType as "retrospective" | "okr_planning" | "standup" | "decision_log" | null,
   }).returning();
 
   await db.insert(meetingMembers).values({

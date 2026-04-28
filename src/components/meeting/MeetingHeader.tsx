@@ -6,8 +6,9 @@ type Props = {
     scheduledStartAt: Date | string | null;
     scheduledEndAt: Date | string | null;
     isOwner: boolean;
+    isAnonymous: boolean;
   };
-  
+
   export default function MeetingHeader({
     title,
     stage,
@@ -16,6 +17,7 @@ type Props = {
     scheduledStartAt,
     scheduledEndAt,
     isOwner,
+    isAnonymous,
   }: Props) {
     const hasSchedule = scheduledStartAt && scheduledEndAt;
     const stagePillStyles = {
@@ -35,6 +37,11 @@ type Props = {
           <span className="rounded-full border border-zinc-200 bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
             {isOwner ? "Owner" : "Collaborator"}
           </span>
+          {isAnonymous && stage === "ideation" && (
+            <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-violet-700">
+              Anonymous
+            </span>
+          )}
         </div>
         <h1 className="text-balance text-3xl font-black tracking-tight text-zinc-900 md:text-4xl">
           {title}

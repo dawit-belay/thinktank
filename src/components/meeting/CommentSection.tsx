@@ -20,6 +20,8 @@ type Props = {
   initialComments: CommentData[];
   currentUserId?: string;
   meetingCreatorId: string;
+  isAnonymous: boolean;
+  meetingStage: "ideation" | "decision" | "summary";
 };
 
 export default function CommentSection({
@@ -29,7 +31,10 @@ export default function CommentSection({
   initialComments,
   currentUserId,
   meetingCreatorId,
+  isAnonymous,
+  meetingStage,
 }: Props) {
+  const hideAuthors = isAnonymous && meetingStage === "ideation";
   const [isOpen, setIsOpen] = useState(false);
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -101,7 +106,7 @@ export default function CommentSection({
                   <div className="min-w-0 flex-1">
                     <div className="rounded-xl bg-zinc-50 px-3 py-2">
                       <p className="text-xs font-semibold text-zinc-700">
-                        {comment.authorName}
+                        {hideAuthors ? "Anonymous" : comment.authorName}
                       </p>
                       <p className="mt-0.5 text-xs text-zinc-600">
                         {comment.content}
@@ -151,7 +156,7 @@ export default function CommentSection({
                           <div className="min-w-0 flex-1">
                             <div className="rounded-xl bg-zinc-50 px-3 py-2">
                               <p className="text-xs font-semibold text-zinc-700">
-                                {reply.authorName}
+                                {hideAuthors ? "Anonymous" : reply.authorName}
                               </p>
                               <p className="mt-0.5 text-xs text-zinc-600">
                                 {reply.content}
@@ -181,7 +186,7 @@ export default function CommentSection({
                   >
                     <input
                       name="content"
-                      placeholder={`Reply to ${comment.authorName}…`}
+                      placeholder={`Reply to ${hideAuthors ? "Anonymous" : comment.authorName}…`}
                       autoFocus
                       className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-800 outline-none transition focus:border-emerald-400 focus:ring-1 focus:ring-emerald-500/20"
                     />

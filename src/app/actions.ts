@@ -163,6 +163,7 @@ export async function createMeeting(formData: FormData) {
   const groupId = formData.get("groupId") as string;
   const scheduledStartAtRaw = String(formData.get("scheduledStartAt") ?? "");
   const scheduledEndAtRaw = String(formData.get("scheduledEndAt") ?? "");
+  const isAnonymous = formData.get("isAnonymous") === "on";
 
   if (!groupId) {
     throw new Error("groupId is missing");
@@ -201,6 +202,7 @@ export async function createMeeting(formData: FormData) {
     groupId,
     scheduledStartAt,
     scheduledEndAt,
+    isAnonymous,
   }).returning();
 
   await db.insert(meetingMembers).values({

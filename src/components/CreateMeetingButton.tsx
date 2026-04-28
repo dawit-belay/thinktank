@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, EyeOff } from "lucide-react";
 import { createMeeting } from "@/app/actions";
 
 function getDefaultDateTimeLocal(minutesFromNow: number) {
@@ -34,6 +34,7 @@ type Props = {
 export default function CreateMeetingButton({ groupId, className }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const open = () => {
     dialogRef.current?.showModal();
@@ -128,6 +129,27 @@ export default function CreateMeetingButton({ groupId, className }: Props) {
               </div>
             </div>
           </div>
+
+          <label className="mt-4 flex cursor-pointer items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50/70 px-4 py-3 transition hover:bg-zinc-100/60">
+              <div className="flex items-center gap-2.5">
+                <EyeOff size={15} className={isAnonymous ? "text-violet-600" : "text-zinc-400"} />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-800">Anonymous brainstorming</p>
+                  <p className="text-xs text-zinc-500">Author names are hidden during ideation</p>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  name="isAnonymous"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`h-6 w-11 rounded-full transition ${isAnonymous ? "bg-violet-500" : "bg-zinc-200"}`} />
+                <div className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${isAnonymous ? "translate-x-5" : "translate-x-0"}`} />
+              </div>
+            </label>
 
           <div className="mt-6 flex justify-end gap-3 border-t border-zinc-100 pt-4">
             <button

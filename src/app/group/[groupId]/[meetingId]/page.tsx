@@ -122,6 +122,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
             scheduledStartAt={meeting.scheduledStartAt}
             scheduledEndAt={meeting.scheduledEndAt}
             isOwner={isOwner}
+            isAnonymous={meeting.isAnonymous}
           />
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-4">
@@ -193,6 +194,7 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                 {meetingIdeas.map((idea) => {
                   const hasVoted = idea.votes.some((v) => v.userId === currentUserId);
                   const canDelete = idea.authorId === currentUserId || isOwner;
+                  const hideAuthor = meeting.isAnonymous && meeting.stage === "ideation";
 
                   return (
                     <article
@@ -219,11 +221,11 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                       <div className="mt-6 flex items-center justify-between border-t border-zinc-100 pt-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-xs font-bold text-zinc-700">
-                            {idea.author.name.charAt(0).toUpperCase()}
+                            {hideAuthor ? "?" : idea.author.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <p className="text-sm font-bold text-zinc-900">
-                              {idea.author.name}
+                              {hideAuthor ? "Anonymous" : idea.author.name}
                             </p>
                             <p className="text-[10px] font-bold uppercase tracking-tighter text-zinc-400">
                               Contributor
@@ -254,6 +256,8 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                         }))}
                         currentUserId={currentUserId}
                         meetingCreatorId={meeting.creatorId}
+                        isAnonymous={meeting.isAnonymous}
+                        meetingStage={meeting.stage}
                       />
                     </article>
                   );

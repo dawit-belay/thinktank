@@ -47,6 +47,7 @@ export const meetings = pgTable("meetings", {
   decisionText: text("decision_text"),
   summary: text("summary"),
   closedAt: timestamp("closed_at"),
+  isAnonymous: boolean("is_anonymous").default(false).notNull(),
 });
 
 // The Members Table (The link between Users and meetings)

@@ -31,62 +31,19 @@ export default function MeetingIdeasRealtime({
 
     const ideasFilter = `meeting_id=eq.${meetingId}`;
 
-    const channel = supabase.channel(`meeting:${meetingId}`).on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "ideas",
-        filter: ideasFilter,
-      },
-      () => {
-        router.refresh();
-      }
-    );
+    const channel = supabase.channel(`meeting:${meetingId}`);
 
-    channel.on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "meetings",
-        filter: `id=eq.${meetingId}`,
-      },
-      (payload) => {
-        const oldStage = (payload.old as { stage?: string } | null)?.stage;
-        const newStage = (payload.new as { stage?: string } | null)?.stage;
-        if (oldStage !== newStage) {
-          router.refresh();
-        }
-      }
-    );
+    channel.on("postgres_changes", { event: "*", schema: "public", table: "ideas", filter: ideasFilter }, () => router.refresh());
+    channel.on("postgres_changes", { event: "UPDATE", schema: "public", table: "meetings", filter: `id=eq.${meetingId}` }, (payload) => {
+      const oldStage = (payload.old as { stage?: string } | null)?.stage;
+      const newStage = (payload.new as { stage?: string } | null)?.stage;
+      if (oldStage !== newStage) router.refresh();
+    });
+    channel.on("postgres_changes", { event: "*", schema: "public", table: "action_items", filter: `meeting_id=eq.${meetingId}` }, () => router.refresh());
 
     if (voteFilter) {
-      channel.on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "votes",
-          filter: voteFilter,
-        },
-        () => {
-          router.refresh();
-        }
-      );
-
-      channel.on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "comments",
-          filter: `idea_id=in.(${ideaIds.join(",")})`,
-        },
-        () => {
-          router.refresh();
-        }
-      );
+      channel.on("postgres_changes", { event: "*", schema: "public", table: "votes", filter: voteFilter }, () => router.refresh());
+      channel.on("postgres_changes", { event: "*", schema: "public", table: "comments", filter: `idea_id=in.(${ideaIds.join(",")})` }, () => router.refresh());
     }
 
     void channel.subscribe();

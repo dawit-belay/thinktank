@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db"; // Adjust this path based on where your db/index.ts is
-import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments } from "@/db/schema";
+import { ideas, groups, meetings, users, votes, groupMembers, meetingMembers, comments, actionItems } from "@/db/schema";
 import { eq, and, or, ilike, notInArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
@@ -785,6 +785,86 @@ export async function deleteComment(
   }
 
   await db.delete(comments).where(eq(comments.id, commentId));
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function createActionItem(
+  formData: FormData
+): Promise<{ ok: boolean; error?: string }> {
+  const content = String(formData.get("content") ?? "").trim();
+  const meetingId = formData.get("meetingId") as string;
+  const groupId = formData.get("groupId") as string;
+  const assigneeId = formData.get("assigneeId") as string;
+  const dueDateRaw = String(formData.get("dueDate") ?? "");
+
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+  if (!content) return { ok: false, error: "Content is required." };
+  if (!assigneeId) return { ok: false, error: "Assignee is required." };
+
+  const permission = await assertCanManageMeeting(meetingId, userId);
+  if (!permission.ok) return { ok: false, error: "Only meeting admins can create action items." };
+
+  const dueDate = dueDateRaw ? new Date(dueDateRaw) : null;
+
+  await db.insert(actionItems).values({
+    meetingId,
+    assigneeId,
+    creatorId: userId,
+    content,
+    dueDate: dueDate && !isNaN(dueDate.getTime()) ? dueDate : null,
+    status: "open",
+  });
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function deleteActionItem(
+  itemId: string,
+  meetingId: string,
+  groupId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const permission = await assertCanManageMeeting(meetingId, userId);
+  if (!permission.ok) return { ok: false, error: "Only meeting admins can delete action items." };
+
+  await db.delete(actionItems).where(eq(actionItems.id, itemId));
+
+  revalidatePath(`/group/${groupId}/${meetingId}`);
+  return { ok: true };
+}
+
+export async function toggleActionItemStatus(
+  itemId: string,
+  meetingId: string,
+  groupId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  if (!userId) return { ok: false, error: "You must be signed in." };
+
+  const item = await db.query.actionItems.findFirst({
+    where: eq(actionItems.id, itemId),
+  });
+  if (!item) return { ok: false, error: "Action item not found." };
+
+  const isAssignee = item.assigneeId === userId;
+  const permission = await assertCanManageMeeting(meetingId, userId);
+  if (!isAssignee && !permission.ok) {
+    return { ok: false, error: "Only the assignee or a meeting admin can update this item." };
+  }
+
+  await db
+    .update(actionItems)
+    .set({ status: item.status === "open" ? "done" : "open" })
+    .where(eq(actionItems.id, itemId));
 
   revalidatePath(`/group/${groupId}/${meetingId}`);
   return { ok: true };

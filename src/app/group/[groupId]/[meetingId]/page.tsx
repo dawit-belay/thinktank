@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { meetings, ideas, groups, groupMembers } from "@/db/schema";
+import { meetings, ideas, groups, groupMembers, actionItems } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { submitIdea } from "@/app/actions";
@@ -21,6 +21,7 @@ import { DecisionPanel } from "@/components/meeting/DecisionPanel";
 import SummaryPanel from "@/components/meeting/SummaryPanel";
 import MeetingIdeasRealtime from "@/components/MeetingIdeasRealtime";
 import CommentSection from "@/components/meeting/CommentSection";
+import ActionItemsPanel from "@/components/meeting/ActionItemsPanel";
 
 interface MeetingPageProps {
   params: Promise<{ meetingId: string, groupId: string}>;
@@ -64,6 +65,12 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
 
   const group = await db.query.groups.findFirst({
     where: eq(groups.id, groupId),
+  });
+
+  const meetingActionItems = await db.query.actionItems.findMany({
+    where: (ai, { eq }) => eq(ai.meetingId, meetingId),
+    with: { assignee: true },
+    orderBy: (ai, { asc }) => [asc(ai.createdAt)],
   });
 
   const myGroupMembership = currentUserId
@@ -276,6 +283,27 @@ export default async function MeetingPage({ params }: MeetingPageProps) {
                 meetingId={meetingId}
                 groupId={groupId}
                 initialSummary={meeting.summary ?? ""}
+                canManage={!!canManageMeetingMembers}
+              />
+            )}
+
+            {meeting.stage === "summary" && (
+              <ActionItemsPanel
+                meetingId={meetingId}
+                groupId={groupId}
+                initialItems={meetingActionItems.map((item) => ({
+                  id: item.id,
+                  content: item.content,
+                  status: item.status,
+                  assigneeId: item.assigneeId,
+                  assigneeName: item.assignee.name,
+                  dueDate: item.dueDate ? item.dueDate.toISOString() : null,
+                }))}
+                members={members.map((m) => ({
+                  userId: m.userId,
+                  userName: m.user.name,
+                }))}
+                currentUserId={currentUserId}
                 canManage={!!canManageMeetingMembers}
               />
             )}

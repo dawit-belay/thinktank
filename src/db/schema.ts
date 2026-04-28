@@ -69,6 +69,18 @@ export const ideas = pgTable("ideas", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// The Action Items Table (tasks assigned from meeting decisions)
+export const actionItems = pgTable("action_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  meetingId: uuid("meeting_id").references(() => meetings.id, { onDelete: "cascade" }).notNull(),
+  assigneeId: uuid("assignee_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  creatorId: uuid("creator_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  content: text("content").notNull(),
+  dueDate: timestamp("due_date"),
+  status: text("status").$type<"open" | "done">().default("open").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // The Comments Table (threaded discussion on ideas)
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -91,6 +103,12 @@ export const votes = pgTable("votes", {
 export const votesRelations = relations(votes, ({ one }) => ({
   user: one(users, { fields: [votes.userId], references: [users.id] }),
   idea: one(ideas, { fields: [votes.ideaId], references: [ideas.id] }),
+}));
+
+export const actionItemsRelations = relations(actionItems, ({ one }) => ({
+  meeting: one(meetings, { fields: [actionItems.meetingId], references: [meetings.id] }),
+  assignee: one(users, { fields: [actionItems.assigneeId], references: [users.id], relationName: "assigned_items" }),
+  creator: one(users, { fields: [actionItems.creatorId], references: [users.id], relationName: "created_items" }),
 }));
 
 export const commentsRelations = relations(comments, ({ one, many }) => ({
@@ -140,6 +158,7 @@ export const meetingsRelations = relations(meetings, ({ one, many }) => ({
   }),
   members: many(meetingMembers),
   ideas: many(ideas),
+  actionItems: many(actionItems),
 }));
 
 export const meetingMembersRelations = relations(meetingMembers, ({ one }) => ({
